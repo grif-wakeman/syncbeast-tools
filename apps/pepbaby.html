@@ -1,677 +1,810 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>PEPbaby</title>
-<script>
-  // Set theme before paint to prevent flash of wrong theme.
-  (function initTheme() {
-    const saved = (() => {
-      try { return localStorage.getItem('pepbaby-theme'); } catch (e) { return null; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>PEPbaby</title>
+  <script>
+    // Set theme before paint to prevent flash of wrong theme.
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('pepbaby-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
     })();
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = saved || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-  })();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --warn: #9a3520;
-    --ok: #2a6f4a;
-    --accent: #2a6f4a;
-    --tooltip-bg: #222;
-    --tooltip-ink: #f5f3ef;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --warn: #e5634a;
-    --ok: #8ace00;
-    --accent: #8ace00;
-    --tooltip-bg: #e8e8e8;
-    --tooltip-ink: #121212;
-  }
-  html { background: var(--bg); min-height: 100%; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  body { padding: 1.5rem 1.25rem 3rem; }
-  .wrap { max-width: 780px; margin: 0 auto; }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --warn: #9a3520;
+      --ok: #2a6f4a;
+      --accent: #2a6f4a;
+      --tooltip-bg: #222;
+      --tooltip-ink: #f5f3ef;
+    }
 
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line);
-    gap: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  h1 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  .tag { font-size: 0.7rem; color: var(--dim); }
-  .theme-toggle {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.12s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --warn: #e5634a;
+      --ok: #8ace00;
+      --accent: #8ace00;
+      --tooltip-bg: #e8e8e8;
+      --tooltip-ink: #121212;
+    }
 
-  /* DROP ZONE */
-  .drop {
-    display: block;
-    background: var(--panel);
-    border: 1px dashed var(--line);
-    padding: 2.25rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.12s, background 0.12s;
-    margin-bottom: 0.75rem;
-  }
-  .drop:hover, .drop.dragging {
-    border-color: var(--ink);
-    background: var(--panel-2);
-  }
-  .drop input { display: none; }
-  .drop-title {
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-bottom: 0.3rem;
-  }
-  .drop-sub {
-    font-size: 0.7rem;
-    color: var(--dim);
-  }
+    html {
+      background: var(--bg);
+      min-height: 100%;
+      transition: background 0.12s;
+    }
 
-  /* INFO TOOLTIPS */
-  .info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--dim);
-    cursor: help;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-    flex-shrink: 0;
-  }
-  .info svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  .info svg .info-ring { stroke: currentColor; }
-  .info svg .info-dot,
-  .info svg .info-stem { fill: currentColor; }
-  .info:hover, .info.open { color: var(--ink); }
-  .info-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 320px;
-    max-width: calc(100vw - 2.5rem);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-ink);
-    border: 1px solid var(--tooltip-bg);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.7rem;
-    font-weight: 400;
-    font-style: normal;
-    text-transform: none;
-    letter-spacing: 0;
-    line-height: 1.5;
-    z-index: 10;
-    display: none;
-    text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  }
-  @media (hover: hover) {
-    .info:hover .info-panel { display: block; }
-  }
-  .info.open .info-panel { display: block; }
-  .info-panel p {
-    margin: 0 0 0.4rem 0;
-    font-size: 0.7rem;
-    line-height: 1.5;
-  }
-  .info-panel p:last-child { margin-bottom: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* Footer variant: styled as plain text word, not a circle */
-  .info.info-footer-word {
-    width: auto;
-    height: auto;
-    border: none;
-    border-radius: 0;
-    font-family: inherit;
-    font-style: normal;
-    font-size: inherit;
-    font-weight: 400;
-    color: var(--dim);
-    padding: 0;
-    background: none;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border-bottom: 1px dotted var(--dimmer);
-  }
-  .info.info-footer-word:hover,
-  .info.info-footer-word.open {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-  /* Footer tooltip: anchor centered above the word */
-  .info-panel-footer {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 8px);
-    top: auto;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-  }
-  .privacy-head {
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-  }
-  @media (max-width: 500px) {
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body {
+      padding: 1.5rem 1.25rem 3rem;
+      transition: background 0.12s;
+    }
+
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      gap: 1rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .theme-toggle {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.12s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    /* DROP ZONE */
+    .drop {
+      display: block;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      padding: 2.25rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+      margin-bottom: 0.75rem;
+    }
+
+    .drop:hover,
+    .drop.dragging {
+      border-color: var(--ink);
+      background: var(--panel-2);
+    }
+
+    .drop input {
+      display: none;
+    }
+
+    .drop-title {
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .drop-sub {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    /* INFO TOOLTIPS */
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      color: var(--dim);
+      cursor: help;
+      position: relative;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+
+    .info svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .info svg .info-ring {
+      stroke: currentColor;
+    }
+
+    .info svg .info-dot,
+    .info svg .info-stem {
+      fill: currentColor;
+    }
+
+    .info:hover,
+    .info.open {
+      color: var(--ink);
+    }
+
+    .info-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      max-width: calc(100vw - 2.5rem);
+      background: var(--tooltip-bg);
+      color: var(--tooltip-ink);
+      border: 1px solid var(--tooltip-bg);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.5;
+      z-index: 10;
+      display: none;
+      text-align: left;
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+
+    @media (hover: hover) {
+      .info:hover .info-panel {
+        display: block;
+      }
+    }
+
+    .info.open .info-panel {
+      display: block;
+    }
+
+    .info-panel p {
+      margin: 0 0 0.4rem 0;
+      font-size: 0.7rem;
+      line-height: 1.5;
+    }
+
+    .info-panel p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Footer variant: styled as plain text word, not a circle */
+    .info.info-footer-word {
+      width: auto;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      font-family: inherit;
+      font-style: normal;
+      font-size: inherit;
+      font-weight: 400;
+      color: var(--dim);
+      padding: 0;
+      background: none;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      border-bottom: 1px dotted var(--dimmer);
+    }
+
+    .info.info-footer-word:hover,
+    .info.info-footer-word.open {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    /* Footer tooltip: anchor centered above the word */
     .info-panel-footer {
+      right: auto;
       left: 50%;
       transform: translateX(-50%);
-      width: calc(100vw - 2rem);
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 300px;
+      max-width: calc(100vw - 2rem);
     }
-  }
 
-  /* STATUS LINE */
-  .status {
-    font-size: 0.7rem;
-    color: var(--dim);
-    min-height: 1.2em;
-    margin-bottom: 1.25rem;
-    padding: 0 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .status .status-text { display: inline-block; }
-  .status.error .status-text { color: var(--warn); }
-  .status.ok .status-text { color: var(--accent); }
+    .privacy-head {
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
 
-  /* RESULTS */
-  .results { display: none; }
-  .results.shown { display: block; }
+    @media (max-width: 500px) {
+      .info-panel-footer {
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100vw - 2rem);
+      }
+    }
 
-  .section {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    margin-bottom: 0.75rem;
-  }
-  .section-head {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel-2);
-  }
+    /* STATUS LINE */
+    .status {
+      font-size: 0.7rem;
+      color: var(--dim);
+      min-height: 1.2em;
+      margin-bottom: 1.25rem;
+      padding: 0 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-  /* OUTPUT GRID — 3 cards */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr; }
-  }
-  .cell {
-    padding: 0.85rem 0.85rem 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    border-right: 1px solid var(--line);
-  }
-  .cell:last-child { border-right: none; }
-  @media (max-width: 600px) {
-    .cell {
-      border-right: none;
+    .status .status-text {
+      display: inline-block;
+    }
+
+    .status.error .status-text {
+      color: var(--warn);
+    }
+
+    .status.ok .status-text {
+      color: var(--accent);
+    }
+
+    /* RESULTS */
+    .results {
+      display: none;
+    }
+
+    .results.shown {
+      display: block;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-head {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
       border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
     }
-    .cell:last-child { border-bottom: none; }
-  }
-  .cell-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-  }
-  .cell-desc {
-    font-size: 0.7rem;
-    color: var(--ink);
-    margin-bottom: 0.15rem;
-  }
-  .cell audio {
-    width: 100%;
-    height: 28px;
-    margin-top: auto;
-  }
-  .cell .dl {
-    display: inline-block;
-    font-family: inherit;
-    font-size: 0.7rem;
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--line);
-    padding: 0.3rem 0.5rem;
-    text-decoration: none;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.12s;
-  }
-  .cell .dl:hover { border-color: var(--ink); }
-  .cell .dl.disabled { opacity: 0.4; pointer-events: none; }
 
-  /* RESET */
-  .reset-wrap { margin-top: 0.75rem; }
-  .reset {
-    background: transparent;
-    border: 1px solid var(--line);
-    color: var(--ink);
-    font-family: inherit;
-    font-size: 0.75rem;
-    padding: 0.4rem 0.7rem;
-    cursor: pointer;
-    transition: border-color 0.12s;
-  }
-  .reset:hover { border-color: var(--ink); }
+    /* OUTPUT GRID — 3 cards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
 
-  /* FOOTER */
-  footer {
-    margin-top: 1.5rem;
-    font-size: 0.65rem;
-    color: var(--dim);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-</style>
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cell {
+      padding: 0.85rem 0.85rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      border-right: 1px solid var(--line);
+    }
+
+    .cell:last-child {
+      border-right: none;
+    }
+
+    @media (max-width: 600px) {
+      .cell {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .cell:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .cell-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+    }
+
+    .cell-desc {
+      font-size: 0.7rem;
+      color: var(--ink);
+      margin-bottom: 0.15rem;
+    }
+
+    .cell audio {
+      width: 100%;
+      height: 28px;
+      margin-top: auto;
+    }
+
+    .cell .dl {
+      display: inline-block;
+      font-family: inherit;
+      font-size: 0.7rem;
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      padding: 0.3rem 0.5rem;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.12s;
+    }
+
+    .cell .dl:hover {
+      border-color: var(--ink);
+    }
+
+    .cell .dl.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* RESET */
+    .reset-wrap {
+      margin-top: 0.75rem;
+    }
+
+    .reset {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      transition: border-color 0.12s;
+    }
+
+    .reset:hover {
+      border-color: var(--ink);
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--dim);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
+  <div class="wrap">
 
-  <header>
-    <h1>PEPbaby</h1>
-    <div class="header-right">
-      <span class="tag">+5% · +10% · +15%</span>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-        <span class="tm-light">light</span>
-        <span class="tm-arrow"></span>
-        <span class="tm-dark">dark</span>
-      </button>
+    <header>
+      <h1>PEPbaby</h1>
+      <div class="header-right">
+        <span class="tag">+5% · +10% · +15%</span>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <span class="tm-light">light</span>
+          <span class="tm-arrow"></span>
+          <span class="tm-dark">dark</span>
+        </button>
+      </div>
+    </header>
+
+    <label class="drop" id="drop">
+      <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg" />
+      <div class="drop-title">drop a track</div>
+      <div class="drop-sub">wav · mp3 · aiff · m4a · flac · ogg</div>
+    </label>
+
+    <div class="status" id="status">
+      <span class="status-text" id="statusText">ready</span>
     </div>
-  </header>
 
-  <label class="drop" id="drop">
-    <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg" />
-    <div class="drop-title">drop a track</div>
-    <div class="drop-sub">wav · mp3 · aiff · m4a · flac · ogg</div>
-  </label>
+    <div class="results" id="results">
+      <div class="section">
+        <div class="section-head">
+          <span id="sourceName">source</span>
+        </div>
+        <div class="grid" id="grid">
+          <div class="cell" data-pct="5">
+            <div class="cell-label">+5%</div>
+            <div class="cell-desc">a nudge</div>
+            <audio controls preload="none"></audio>
+            <a class="dl disabled" download>download</a>
+          </div>
+          <div class="cell" data-pct="10">
+            <div class="cell-label">+10%</div>
+            <div class="cell-desc">noticeably peppier</div>
+            <audio controls preload="none"></audio>
+            <a class="dl disabled" download>download</a>
+          </div>
+          <div class="cell" data-pct="15">
+            <div class="cell-label">+15%</div>
+            <div class="cell-desc">the big swing</div>
+            <audio controls preload="none"></audio>
+            <a class="dl disabled" download>download</a>
+          </div>
+        </div>
+      </div>
 
-  <div class="status" id="status">
-    <span class="status-text" id="statusText">ready</span>
+      <div class="reset-wrap">
+        <button class="reset" id="reset">pep another track</button>
+      </div>
+    </div>
+
+    <footer>
+      <span>© Sync Beast LLC ·</span>
+      <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy"
+        aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+          <div class="privacy-head">Your audio stays on your device.</div>
+          <p>PEPbaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained
+            by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
+          <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
+        </span></button>
+    </footer>
+
   </div>
 
-  <div class="results" id="results">
-    <div class="section">
-      <div class="section-head">
-        <span id="sourceName">source</span>
-      </div>
-      <div class="grid" id="grid">
-        <div class="cell" data-pct="5">
-          <div class="cell-label">+5%</div>
-          <div class="cell-desc">a nudge</div>
-          <audio controls preload="none"></audio>
-          <a class="dl disabled" download>download</a>
-        </div>
-        <div class="cell" data-pct="10">
-          <div class="cell-label">+10%</div>
-          <div class="cell-desc">noticeably peppier</div>
-          <audio controls preload="none"></audio>
-          <a class="dl disabled" download>download</a>
-        </div>
-        <div class="cell" data-pct="15">
-          <div class="cell-label">+15%</div>
-          <div class="cell-desc">the big swing</div>
-          <audio controls preload="none"></audio>
-          <a class="dl disabled" download>download</a>
-        </div>
-      </div>
-    </div>
+  <script type="module">
+    import { SoundTouch, SimpleFilter } from 'https://esm.sh/soundtouchjs@0.3.0';
 
-    <div class="reset-wrap">
-      <button class="reset" id="reset">pep another track</button>
-    </div>
-  </div>
-
-  <footer>
-    <span>© Sync Beast LLC ·</span>
-    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
-      <div class="privacy-head">Your audio stays on your device.</div>
-      <p>PEPbaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
-      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
-    </span></button>
-  </footer>
-
-</div>
-
-<script type="module">
-import { SoundTouch, SimpleFilter } from 'https://esm.sh/soundtouchjs@0.3.0';
-
-// ---------- THEME ----------
-// (Initial theme is set in the head <script> before paint.)
-const themeToggle = document.getElementById('themeToggle');
-if (themeToggle) {
-  themeToggle.addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme') || 'light';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('pepbaby-theme', next); } catch (e) {}
-  });
-}
-
-// ---------- INFO TOOLTIPS (click to toggle on mobile, hover on desktop) ----------
-const infos = document.querySelectorAll('.info');
-const closeAllInfos = () => {
-  infos.forEach(el => {
-    el.classList.remove('open');
-    el.setAttribute('aria-expanded', 'false');
-  });
-};
-infos.forEach(info => {
-  info.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const wasOpen = info.classList.contains('open');
-    closeAllInfos();
-    if (!wasOpen) {
-      info.classList.add('open');
-      info.setAttribute('aria-expanded', 'true');
-    }
-  });
-  const panel = info.querySelector('.info-panel');
-  if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
-});
-document.addEventListener('click', closeAllInfos);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllInfos(); });
-
-// ---------- ELEMENTS ----------
-const drop = document.getElementById('drop');
-const fileInput = document.getElementById('fileInput');
-const statusEl = document.getElementById('status');
-const statusText = document.getElementById('statusText');
-const results = document.getElementById('results');
-const sourceName = document.getElementById('sourceName');
-const resetBtn = document.getElementById('reset');
-const cells = document.querySelectorAll('.cell');
-
-const PERCENTS = [5, 10, 15];
-let originalName = 'track';
-
-function setStatus(msg, kind = '') {
-  statusText.textContent = msg;
-  statusEl.className = 'status' + (kind ? ' ' + kind : '');
-}
-
-// ---------- DROP HANDLERS ----------
-// Prevent the browser from opening the file in a new tab if user drops
-// anywhere on the page (even slightly outside the drop zone).
-window.addEventListener('dragover', e => e.preventDefault());
-window.addEventListener('drop', e => e.preventDefault());
-
-drop.addEventListener('click', (e) => {
-  if (e.target.tagName !== 'INPUT') fileInput.click();
-});
-['dragover', 'dragenter'].forEach(ev =>
-  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('dragging'); })
-);
-['dragleave'].forEach(ev =>
-  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('dragging'); })
-);
-drop.addEventListener('drop', e => {
-  e.preventDefault();
-  drop.classList.remove('dragging');
-  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener('change', e => {
-  if (e.target.files.length) handleFile(e.target.files[0]);
-});
-
-resetBtn.addEventListener('click', () => {
-  results.classList.remove('shown');
-  cells.forEach(c => {
-    c.querySelector('audio').src = '';
-    const dl = c.querySelector('.dl');
-    dl.removeAttribute('href');
-    dl.classList.add('disabled');
-  });
-  setStatus('ready');
-  fileInput.value = '';
-});
-
-// ---------- MAIN ----------
-async function handleFile(file) {
-  originalName = file.name.replace(/\.[^.]+$/, '');
-  results.classList.remove('shown');
-  cells.forEach(c => {
-    c.querySelector('audio').src = '';
-    const dl = c.querySelector('.dl');
-    dl.removeAttribute('href');
-    dl.classList.add('disabled');
-  });
-
-  setStatus(`reading ${file.name}…`);
-
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    setStatus('decoding source audio…');
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-
-    sourceName.textContent = originalName;
-    results.classList.add('shown');
-
-    for (let i = 0; i < PERCENTS.length; i++) {
-      const pct = PERCENTS[i];
-      setStatus(`stretching +${pct}% (${i + 1} of ${PERCENTS.length})…`);
-      await new Promise(r => setTimeout(r, 20));
-
-      const stretched = await timeStretch(audioBuffer, pct);
-      const wavBlob = audioBufferToWav(stretched);
-      const url = URL.createObjectURL(wavBlob);
-
-      const cell = document.querySelector(`.cell[data-pct="${pct}"]`);
-      cell.querySelector('audio').src = url;
-      const dl = cell.querySelector('.dl');
-      dl.href = url;
-      dl.download = `${originalName}_pep+${pct}.wav`;
-      dl.classList.remove('disabled');
-    }
-
-    setStatus('done', 'ok');
-  } catch (err) {
-    console.error(err);
-    setStatus('error: ' + (err.message || 'something broke'), 'error');
-  }
-}
-
-// ---------- TIME STRETCH (pitch-preserved) ----------
-function timeStretch(audioBuffer, tempoChangePct) {
-  return new Promise((resolve, reject) => {
-    try {
-      const channels = audioBuffer.numberOfChannels;
-      const sampleRate = audioBuffer.sampleRate;
-      const inputLength = audioBuffer.length;
-
-      const interleaved = new Float32Array(inputLength * 2);
-      const ch0 = audioBuffer.getChannelData(0);
-      const ch1 = channels > 1 ? audioBuffer.getChannelData(1) : ch0;
-      for (let i = 0; i < inputLength; i++) {
-        interleaved[i * 2] = ch0[i];
-        interleaved[i * 2 + 1] = ch1[i];
-      }
-
-      const st = new SoundTouch();
-      st.tempo = 1 + tempoChangePct / 100;
-      st.pitch = 1;
-      st.rate = 1;
-
-      let readPos = 0;
-      const source = {
-        extract: (target, numFrames) => {
-          const remaining = inputLength - readPos;
-          const toRead = Math.min(numFrames, remaining);
-          for (let i = 0; i < toRead; i++) {
-            target[i * 2] = interleaved[(readPos + i) * 2];
-            target[i * 2 + 1] = interleaved[(readPos + i) * 2 + 1];
-          }
-          readPos += toRead;
-          return toRead;
-        }
-      };
-
-      const filter = new SimpleFilter(source, st);
-      const outChunks = [];
-      const buf = new Float32Array(8192 * 2);
-      let total = 0;
-      let received;
-      do {
-        received = filter.extract(buf, 8192);
-        if (received > 0) {
-          outChunks.push(buf.slice(0, received * 2));
-          total += received;
-        }
-      } while (received > 0);
-
-      const outBuf = new AudioBuffer({
-        numberOfChannels: 2,
-        length: total,
-        sampleRate: sampleRate
+    // ---------- THEME ----------
+    // (Initial theme is set in the head <script> before paint.)
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('pepbaby-theme', next); } catch (e) { }
       });
-      const outL = outBuf.getChannelData(0);
-      const outR = outBuf.getChannelData(1);
-      let writePos = 0;
-      for (const chunk of outChunks) {
-        const frames = chunk.length / 2;
-        for (let i = 0; i < frames; i++) {
-          outL[writePos + i] = chunk[i * 2];
-          outR[writePos + i] = chunk[i * 2 + 1];
-        }
-        writePos += frames;
-      }
-
-      resolve(outBuf);
-    } catch (e) {
-      reject(e);
     }
-  });
-}
 
-// ---------- WAV ENCODER (16-bit PCM) ----------
-function audioBufferToWav(buffer) {
-  const numCh = buffer.numberOfChannels;
-  const sr = buffer.sampleRate;
-  const len = buffer.length;
-  const interleaved = new Float32Array(len * numCh);
-  for (let ch = 0; ch < numCh; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < len; i++) interleaved[i * numCh + ch] = data[i];
-  }
-  const bytesPerSample = 2;
-  const blockAlign = numCh * bytesPerSample;
-  const byteRate = sr * blockAlign;
-  const dataSize = interleaved.length * bytesPerSample;
-  const ab = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(ab);
-  const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-  ws(0, 'RIFF');
-  view.setUint32(4, 36 + dataSize, true);
-  ws(8, 'WAVE');
-  ws(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, numCh, true);
-  view.setUint32(24, sr, true);
-  view.setUint32(28, byteRate, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, 16, true);
-  ws(36, 'data');
-  view.setUint32(40, dataSize, true);
-  let offset = 44;
-  for (let i = 0; i < interleaved.length; i++) {
-    let s = Math.max(-1, Math.min(1, interleaved[i]));
-    s = s < 0 ? s * 0x8000 : s * 0x7FFF;
-    view.setInt16(offset, s, true);
-    offset += 2;
-  }
-  return new Blob([ab], { type: 'audio/wav' });
-}
-</script>
+    // ---------- INFO TOOLTIPS (click to toggle on mobile, hover on desktop) ----------
+    const infos = document.querySelectorAll('.info');
+    const closeAllInfos = () => {
+      infos.forEach(el => {
+        el.classList.remove('open');
+        el.setAttribute('aria-expanded', 'false');
+      });
+    };
+    infos.forEach(info => {
+      info.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = info.classList.contains('open');
+        closeAllInfos();
+        if (!wasOpen) {
+          info.classList.add('open');
+          info.setAttribute('aria-expanded', 'true');
+        }
+      });
+      const panel = info.querySelector('.info-panel');
+      if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+    });
+    document.addEventListener('click', closeAllInfos);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllInfos(); });
+
+    // ---------- ELEMENTS ----------
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('fileInput');
+    const statusEl = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const results = document.getElementById('results');
+    const sourceName = document.getElementById('sourceName');
+    const resetBtn = document.getElementById('reset');
+    const cells = document.querySelectorAll('.cell');
+
+    const PERCENTS = [5, 10, 15];
+    let originalName = 'track';
+
+    function setStatus(msg, kind = '') {
+      statusText.textContent = msg;
+      statusEl.className = 'status' + (kind ? ' ' + kind : '');
+    }
+
+    // ---------- DROP HANDLERS ----------
+    // Prevent the browser from opening the file in a new tab if user drops
+    // anywhere on the page (even slightly outside the drop zone).
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => e.preventDefault());
+
+    drop.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') fileInput.click();
+    });
+    ['dragover', 'dragenter'].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('dragging'); })
+    );
+    ['dragleave'].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('dragging'); })
+    );
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('dragging');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', e => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      results.classList.remove('shown');
+      cells.forEach(c => {
+        c.querySelector('audio').src = '';
+        const dl = c.querySelector('.dl');
+        dl.removeAttribute('href');
+        dl.classList.add('disabled');
+      });
+      setStatus('ready');
+      fileInput.value = '';
+    });
+
+    // ---------- MAIN ----------
+    async function handleFile(file) {
+      originalName = file.name.replace(/\.[^.]+$/, '');
+      results.classList.remove('shown');
+      cells.forEach(c => {
+        c.querySelector('audio').src = '';
+        const dl = c.querySelector('.dl');
+        dl.removeAttribute('href');
+        dl.classList.add('disabled');
+      });
+
+      setStatus(`reading ${file.name}…`);
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        setStatus('decoding source audio…');
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+        sourceName.textContent = originalName;
+        results.classList.add('shown');
+
+        for (let i = 0; i < PERCENTS.length; i++) {
+          const pct = PERCENTS[i];
+          setStatus(`stretching +${pct}% (${i + 1} of ${PERCENTS.length})…`);
+          await new Promise(r => setTimeout(r, 20));
+
+          const stretched = await timeStretch(audioBuffer, pct);
+          const wavBlob = audioBufferToWav(stretched);
+          const url = URL.createObjectURL(wavBlob);
+
+          const cell = document.querySelector(`.cell[data-pct="${pct}"]`);
+          cell.querySelector('audio').src = url;
+          const dl = cell.querySelector('.dl');
+          dl.href = url;
+          dl.download = `${originalName}_pep+${pct}.wav`;
+          dl.classList.remove('disabled');
+        }
+
+        setStatus('done', 'ok');
+      } catch (err) {
+        console.error(err);
+        setStatus('error: ' + (err.message || 'something broke'), 'error');
+      }
+    }
+
+    // ---------- TIME STRETCH (pitch-preserved) ----------
+    function timeStretch(audioBuffer, tempoChangePct) {
+      return new Promise((resolve, reject) => {
+        try {
+          const channels = audioBuffer.numberOfChannels;
+          const sampleRate = audioBuffer.sampleRate;
+          const inputLength = audioBuffer.length;
+
+          const interleaved = new Float32Array(inputLength * 2);
+          const ch0 = audioBuffer.getChannelData(0);
+          const ch1 = channels > 1 ? audioBuffer.getChannelData(1) : ch0;
+          for (let i = 0; i < inputLength; i++) {
+            interleaved[i * 2] = ch0[i];
+            interleaved[i * 2 + 1] = ch1[i];
+          }
+
+          const st = new SoundTouch();
+          st.tempo = 1 + tempoChangePct / 100;
+          st.pitch = 1;
+          st.rate = 1;
+
+          let readPos = 0;
+          const source = {
+            extract: (target, numFrames) => {
+              const remaining = inputLength - readPos;
+              const toRead = Math.min(numFrames, remaining);
+              for (let i = 0; i < toRead; i++) {
+                target[i * 2] = interleaved[(readPos + i) * 2];
+                target[i * 2 + 1] = interleaved[(readPos + i) * 2 + 1];
+              }
+              readPos += toRead;
+              return toRead;
+            }
+          };
+
+          const filter = new SimpleFilter(source, st);
+          const outChunks = [];
+          const buf = new Float32Array(8192 * 2);
+          let total = 0;
+          let received;
+          do {
+            received = filter.extract(buf, 8192);
+            if (received > 0) {
+              outChunks.push(buf.slice(0, received * 2));
+              total += received;
+            }
+          } while (received > 0);
+
+          const outBuf = new AudioBuffer({
+            numberOfChannels: 2,
+            length: total,
+            sampleRate: sampleRate
+          });
+          const outL = outBuf.getChannelData(0);
+          const outR = outBuf.getChannelData(1);
+          let writePos = 0;
+          for (const chunk of outChunks) {
+            const frames = chunk.length / 2;
+            for (let i = 0; i < frames; i++) {
+              outL[writePos + i] = chunk[i * 2];
+              outR[writePos + i] = chunk[i * 2 + 1];
+            }
+            writePos += frames;
+          }
+
+          resolve(outBuf);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    // ---------- WAV ENCODER (16-bit PCM) ----------
+    function audioBufferToWav(buffer) {
+      const numCh = buffer.numberOfChannels;
+      const sr = buffer.sampleRate;
+      const len = buffer.length;
+      const interleaved = new Float32Array(len * numCh);
+      for (let ch = 0; ch < numCh; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = 0; i < len; i++) interleaved[i * numCh + ch] = data[i];
+      }
+      const bytesPerSample = 2;
+      const blockAlign = numCh * bytesPerSample;
+      const byteRate = sr * blockAlign;
+      const dataSize = interleaved.length * bytesPerSample;
+      const ab = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(ab);
+      const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+      ws(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      ws(8, 'WAVE');
+      ws(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numCh, true);
+      view.setUint32(24, sr, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 16, true);
+      ws(36, 'data');
+      view.setUint32(40, dataSize, true);
+      let offset = 44;
+      for (let i = 0; i < interleaved.length; i++) {
+        let s = Math.max(-1, Math.min(1, interleaved[i]));
+        s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        view.setInt16(offset, s, true);
+        offset += 2;
+      }
+      return new Blob([ab], { type: 'audio/wav' });
+    }
+  </script>
 
 </body>
+
 </html>

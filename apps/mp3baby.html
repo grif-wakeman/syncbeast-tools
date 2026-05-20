@@ -1,943 +1,1100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>MP3baby</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --warn: #9a3520;
-    --ok: #2a6f4a;
-    --accent: #2a6f4a;
-    --tooltip-bg: #222;
-    --tooltip-ink: #f5f3ef;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --warn: #e5634a;
-    --ok: #8ace00;
-    --accent: #8ace00;
-    --tooltip-bg: #e8e8e8;
-    --tooltip-ink: #121212;
-  }
-  html { background: var(--bg); min-height: 100%; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  body { padding: 1.5rem 1.25rem 3rem; }
-  .wrap { max-width: 780px; margin: 0 auto; }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line);
-    gap: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  h1 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  .tag { font-size: 0.7rem; color: var(--dim); }
-  .theme-toggle {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.12s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
-
-  .drop {
-    border: 1px dashed var(--dimmer);
-    background: var(--panel);
-    padding: 2rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-    display: block;
-  }
-  .drop:hover, .drop.hover {
-    background: var(--panel-2);
-    border-color: var(--ink);
-  }
-  .drop-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
-  .drop-sub { font-size: 0.7rem; color: var(--dim); }
-  .drop input { display: none; }
-
-  .status {
-    margin-top: 0.75rem;
-    font-size: 0.7rem;
-    color: var(--dim);
-    min-height: 1em;
-  }
-  .status.err { color: var(--warn); }
-
-  .queue { margin-top: 1.25rem; display: none; }
-  .queue.show { display: block; }
-
-  .section {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    margin-bottom: 0.75rem;
-  }
-  .section-head {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--dim);
-    cursor: help;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .info svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  .info svg .info-ring { stroke: currentColor; }
-  .info svg .info-dot,
-  .info svg .info-stem { fill: currentColor; }
-  .info:hover, .info.open { color: var(--ink); }
-  .info-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 320px;
-    max-width: calc(100vw - 2.5rem);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-ink);
-    border: 1px solid var(--tooltip-bg);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.7rem;
-    font-weight: 400;
-    font-style: normal;
-    text-transform: none;
-    letter-spacing: 0;
-    line-height: 1.5;
-    z-index: 10;
-    display: none;
-    text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  }
-  @media (hover: hover) {
-    .info:hover .info-panel { display: block; }
-  }
-  .info.open .info-panel { display: block; }
-  .info-panel p {
-    font-size: 0.7rem;
-    margin-bottom: 0.4rem;
-    line-height: 1.5;
-  }
-  .info-panel p:last-child { margin-bottom: 0; }
-
-  .row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem 0.75rem;
-    align-items: center;
-    padding: 0.55rem 0.75rem;
-    border-bottom: 1px solid var(--line);
-  }
-  .row:last-child { border-bottom: none; }
-  .row-name {
-    font-size: 0.8rem;
-    font-weight: 500;
-    word-break: break-all;
-    min-width: 0;
-  }
-  .row-state {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-  .row-state.ok { color: var(--ok); font-weight: 700; }
-  .row-state.err { color: var(--warn); font-weight: 700; }
-  .row-state.active { color: var(--ink); }
-  .row-bar {
-    grid-column: 1 / -1;
-    position: relative;
-    height: 4px;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    overflow: hidden;
-  }
-  .row-bar-fill {
-    position: absolute;
-    top: 0; bottom: 0; left: 0;
-    width: 0%;
-    background: var(--accent);
-    transition: width 0.12s linear;
-  }
-  .row-bar.done .row-bar-fill { width: 100% !important; }
-  .row-bar.err .row-bar-fill { background: var(--warn); width: 100% !important; }
-
-  .summary {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.7rem;
-    color: var(--dim);
-    border-top: 1px solid var(--line);
-    background: var(--panel-2);
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .summary .count-done { color: var(--ink); font-weight: 500; }
-
-  .reset {
-    margin-top: 1rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    color: var(--dim);
-    padding: 0.4rem 0.75rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-  }
-  .reset:hover { color: var(--ink); border-color: var(--ink); }
-  .reset:disabled { opacity: 0.5; cursor: not-allowed; }
-  .reset:disabled:hover { color: var(--dim); border-color: var(--line); }
-
-  footer {
-    margin-top: 1.5rem;
-    font-size: 0.65rem;
-    color: var(--dim);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .info.info-footer-word {
-    width: auto;
-    height: auto;
-    border: none;
-    border-radius: 0;
-    font-family: inherit;
-    font-style: normal;
-    font-size: inherit;
-    font-weight: 400;
-    color: var(--dim);
-    padding: 0;
-    background: none;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border-bottom: 1px dotted var(--dimmer);
-  }
-  .info.info-footer-word:hover,
-  .info.info-footer-word.open {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-  .info-panel-footer {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 8px);
-    top: auto;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-  }
-  .privacy-head {
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-  }
-  @media (max-width: 500px) {
-    .info-panel-footer {
-      position: fixed;
-      left: 1rem;
-      right: 1rem;
-      bottom: 1rem;
-      top: auto;
-      transform: none;
-      width: auto;
-      max-width: none;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>MP3baby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --warn: #9a3520;
+      --ok: #2a6f4a;
+      --accent: #2a6f4a;
+      --tooltip-bg: #222;
+      --tooltip-ink: #f5f3ef;
     }
-  }
-</style>
-<script>
-(function initTheme() {
-  const saved = (() => {
-    try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
-  })();
-  // Inherit LUFSbaby's theme choice if the user has one, so the family feels unified
-  const lufsSaved = (() => {
-    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
-  })();
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || lufsSaved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
-</script>
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --warn: #e5634a;
+      --ok: #8ace00;
+      --accent: #8ace00;
+      --tooltip-bg: #e8e8e8;
+      --tooltip-ink: #121212;
+    }
+
+    html {
+      background: var(--bg);
+      min-height: 100%;
+      transition: background 0.12s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body {
+      padding: 1.5rem 1.25rem 3rem;
+      transition: background 0.12s;
+    }
+
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      gap: 1rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .theme-toggle {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.12s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    .drop {
+      border: 1px dashed var(--dimmer);
+      background: var(--panel);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      display: block;
+    }
+
+    .drop:hover,
+    .drop.hover {
+      background: var(--panel-2);
+      border-color: var(--ink);
+    }
+
+    .drop-title {
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .drop-sub {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .drop input {
+      display: none;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--dim);
+      min-height: 1em;
+    }
+
+    .status.err {
+      color: var(--warn);
+    }
+
+    .queue {
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .queue.show {
+      display: block;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-head {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      color: var(--dim);
+      cursor: help;
+      position: relative;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .info svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .info svg .info-ring {
+      stroke: currentColor;
+    }
+
+    .info svg .info-dot,
+    .info svg .info-stem {
+      fill: currentColor;
+    }
+
+    .info:hover,
+    .info.open {
+      color: var(--ink);
+    }
+
+    .info-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      max-width: calc(100vw - 2.5rem);
+      background: var(--tooltip-bg);
+      color: var(--tooltip-ink);
+      border: 1px solid var(--tooltip-bg);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.5;
+      z-index: 10;
+      display: none;
+      text-align: left;
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+
+    @media (hover: hover) {
+      .info:hover .info-panel {
+        display: block;
+      }
+    }
+
+    .info.open .info-panel {
+      display: block;
+    }
+
+    .info-panel p {
+      font-size: 0.7rem;
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .info-panel p:last-child {
+      margin-bottom: 0;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      word-break: break-all;
+      min-width: 0;
+    }
+
+    .row-state {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+
+    .row-state.ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .row-state.err {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    .row-state.active {
+      color: var(--ink);
+    }
+
+    .row-bar {
+      grid-column: 1 / -1;
+      position: relative;
+      height: 4px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .row-bar-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.12s linear;
+    }
+
+    .row-bar.done .row-bar-fill {
+      width: 100% !important;
+    }
+
+    .row-bar.err .row-bar-fill {
+      background: var(--warn);
+      width: 100% !important;
+    }
+
+    .summary {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.7rem;
+      color: var(--dim);
+      border-top: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .summary .count-done {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .reset {
+      margin-top: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--dim);
+      padding: 0.4rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+
+    .reset:hover {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .reset:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .reset:disabled:hover {
+      color: var(--dim);
+      border-color: var(--line);
+    }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--dim);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .info.info-footer-word {
+      width: auto;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      font-family: inherit;
+      font-style: normal;
+      font-size: inherit;
+      font-weight: 400;
+      color: var(--dim);
+      padding: 0;
+      background: none;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      border-bottom: 1px dotted var(--dimmer);
+    }
+
+    .info.info-footer-word:hover,
+    .info.info-footer-word.open {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    .info-panel-footer {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 300px;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .privacy-head {
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 500px) {
+      .info-panel-footer {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        top: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+      }
+    }
+  </style>
+  <script>
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+      })();
+      // Inherit LUFSbaby's theme choice if the user has one, so the family feels unified
+      const lufsSaved = (() => {
+        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || lufsSaved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
+
 <body>
-<div class="wrap">
-  <header>
-    <h1>MP3baby</h1>
-    <div class="header-right">
-      <div class="tag">320 kbps · CBR</div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+  <div class="wrap">
+    <header>
+      <h1>MP3baby</h1>
+      <div class="header-right">
+        <div class="tag">320 kbps · CBR</div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span
+            class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+      </div>
+    </header>
+
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg,.webm,.opus" multiple>
+      <div class="drop-title">Drop audio files here, or click to select</div>
+      <div class="drop-sub">M4A · WAV · AIFF · FLAC · OGG · MP3 → 320 kbps MP3</div>
+    </label>
+
+    <div class="status" id="status"></div>
+
+    <div class="queue" id="queue">
+      <div class="section">
+        <div class="section-head">
+          <span>Queue</span>
+          <button class="info" type="button" id="queueInfo" aria-label="About conversion" aria-expanded="false"><svg
+              viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5" />
+              <circle class="info-dot" cx="12" cy="7" r="1.5" />
+              <rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5" />
+            </svg><span class="info-panel" role="tooltip">
+              <p>Your browser may ask permission on the first multi-file batch. Allow it so every file downloads.</p>
+            </span></button>
+        </div>
+        <div id="rows"></div>
+        <div class="summary" id="summary">
+          <span><span class="count-done" id="countDone">0</span> <span id="countLabel">of 0 done</span></span>
+          <span id="summaryRight"></span>
+        </div>
+      </div>
+
+      <button class="reset" id="reset">Clear queue</button>
     </div>
-  </header>
 
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg,.webm,.opus" multiple>
-    <div class="drop-title">Drop audio files here, or click to select</div>
-    <div class="drop-sub">M4A · WAV · AIFF · FLAC · OGG · MP3 → 320 kbps MP3</div>
-  </label>
-
-  <div class="status" id="status"></div>
-
-  <div class="queue" id="queue">
-    <div class="section">
-      <div class="section-head">
-        <span>Queue</span>
-        <button class="info" type="button" id="queueInfo" aria-label="About conversion" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
-          <p>Your browser may ask permission on the first multi-file batch. Allow it so every file downloads.</p>
+    <footer>
+      <span>© Sync Beast LLC ·</span>
+      <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy"
+        aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+          <div class="privacy-head">Your audio stays on your device.</div>
+          <p>MP3baby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained
+            by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
+          <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
         </span></button>
-      </div>
-      <div id="rows"></div>
-      <div class="summary" id="summary">
-        <span><span class="count-done" id="countDone">0</span> <span id="countLabel">of 0 done</span></span>
-        <span id="summaryRight"></span>
-      </div>
-    </div>
-
-    <button class="reset" id="reset">Clear queue</button>
+    </footer>
   </div>
 
-  <footer>
-    <span>© Sync Beast LLC ·</span>
-    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
-      <div class="privacy-head">Your audio stays on your device.</div>
-      <p>MP3baby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
-      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
-    </span></button>
-  </footer>
-</div>
-
-<!-- lamejs: pure-JS LAME MP3 encoder -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-<script>
-// ============================================================
-// Theme toggle
-// ============================================================
+  <!-- lamejs: pure-JS LAME MP3 encoder -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+  <script>
+    // ============================================================
+    // Theme toggle
+    // ============================================================
 
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') || 'light';
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try { localStorage.setItem('mp3baby-theme', next); } catch (e) {}
-    });
-  }
-
-  // Info tooltips
-  const infos = document.querySelectorAll('.info');
-  const closeAll = () => {
-    infos.forEach(el => {
-      el.classList.remove('open');
-      el.setAttribute('aria-expanded', 'false');
-    });
-  };
-  infos.forEach(info => {
-    info.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = info.classList.contains('open');
-      closeAll();
-      if (!wasOpen) {
-        info.classList.add('open');
-        info.setAttribute('aria-expanded', 'true');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggle');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const cur = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('mp3baby-theme', next); } catch (e) { }
+        });
       }
+
+      // Info tooltips
+      const infos = document.querySelectorAll('.info');
+      const closeAll = () => {
+        infos.forEach(el => {
+          el.classList.remove('open');
+          el.setAttribute('aria-expanded', 'false');
+        });
+      };
+      infos.forEach(info => {
+        info.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = info.classList.contains('open');
+          closeAll();
+          if (!wasOpen) {
+            info.classList.add('open');
+            info.setAttribute('aria-expanded', 'true');
+          }
+        });
+        const panel = info.querySelector('.info-panel');
+        if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
     });
-    const panel = info.querySelector('.info-panel');
-    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
-  });
-  document.addEventListener('click', closeAll);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-});
 
-// ============================================================
-// Drop zone + file intake
-// ============================================================
-const drop = document.getElementById('drop');
-const fileInput = document.getElementById('file');
-const status = document.getElementById('status');
-const queue = document.getElementById('queue');
-const rowsEl = document.getElementById('rows');
-const countDoneEl = document.getElementById('countDone');
-const countLabelEl = document.getElementById('countLabel');
-const summaryRightEl = document.getElementById('summaryRight');
-const resetBtn = document.getElementById('reset');
+    // ============================================================
+    // Drop zone + file intake
+    // ============================================================
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    const status = document.getElementById('status');
+    const queue = document.getElementById('queue');
+    const rowsEl = document.getElementById('rows');
+    const countDoneEl = document.getElementById('countDone');
+    const countLabelEl = document.getElementById('countLabel');
+    const summaryRightEl = document.getElementById('summaryRight');
+    const resetBtn = document.getElementById('reset');
 
-['dragenter', 'dragover'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.add('hover');
-  });
-});
-['dragleave', 'drop'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.remove('hover');
-  });
-});
-drop.addEventListener('drop', (e) => {
-  const files = Array.from(e.dataTransfer.files || []);
-  if (files.length) addFiles(files);
-});
-fileInput.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files || []);
-  if (files.length) addFiles(files);
-  // Clear the input so the same filename can be dropped again after a reset
-  fileInput.value = '';
-});
-resetBtn.addEventListener('click', () => {
-  if (state.processing) return;
-  state.items = [];
-  rowsEl.innerHTML = '';
-  queue.classList.remove('show');
-  setStatus('');
-  updateSummary();
-});
+    ['dragenter', 'dragover'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.add('hover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.remove('hover');
+      });
+    });
+    drop.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length) addFiles(files);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length) addFiles(files);
+      // Clear the input so the same filename can be dropped again after a reset
+      fileInput.value = '';
+    });
+    resetBtn.addEventListener('click', () => {
+      if (state.processing) return;
+      state.items = [];
+      rowsEl.innerHTML = '';
+      queue.classList.remove('show');
+      setStatus('');
+      updateSummary();
+    });
 
-function setStatus(msg, kind = '') {
-  status.textContent = msg;
-  status.className = 'status' + (kind ? ' ' + kind : '');
-}
+    function setStatus(msg, kind = '') {
+      status.textContent = msg;
+      status.className = 'status' + (kind ? ' ' + kind : '');
+    }
 
-// ============================================================
-// State & queue
-// ============================================================
-const state = {
-  items: [],      // { id, file, rowEl, barEl, stateEl, status: 'pending'|'active'|'done'|'err' }
-  processing: false,
-};
-let nextId = 0;
+    // ============================================================
+    // State & queue
+    // ============================================================
+    const state = {
+      items: [],      // { id, file, rowEl, barEl, stateEl, status: 'pending'|'active'|'done'|'err' }
+      processing: false,
+    };
+    let nextId = 0;
 
-function addFiles(files) {
-  const accepted = files.filter(f => isAudioFile(f));
-  const rejected = files.length - accepted.length;
-  if (rejected > 0) {
-    setStatus(rejected + ' file' + (rejected === 1 ? '' : 's') + ' skipped — not audio.', 'err');
-  } else {
-    setStatus('');
-  }
-  for (const f of accepted) enqueue(f);
-  queue.classList.add('show');
-  updateSummary();
-  pump();
-}
+    function addFiles(files) {
+      const accepted = files.filter(f => isAudioFile(f));
+      const rejected = files.length - accepted.length;
+      if (rejected > 0) {
+        setStatus(rejected + ' file' + (rejected === 1 ? '' : 's') + ' skipped — not audio.', 'err');
+      } else {
+        setStatus('');
+      }
+      for (const f of accepted) enqueue(f);
+      queue.classList.add('show');
+      updateSummary();
+      pump();
+    }
 
-function isAudioFile(f) {
-  if (f.type && f.type.startsWith('audio/')) return true;
-  const n = (f.name || '').toLowerCase();
-  return /\.(m4a|mp3|wav|aif|aiff|flac|ogg|oga|opus|webm|mp4|aac)$/.test(n);
-}
+    function isAudioFile(f) {
+      if (f.type && f.type.startsWith('audio/')) return true;
+      const n = (f.name || '').toLowerCase();
+      return /\.(m4a|mp3|wav|aif|aiff|flac|ogg|oga|opus|webm|mp4|aac)$/.test(n);
+    }
 
-function enqueue(file) {
-  const id = ++nextId;
-  const row = document.createElement('div');
-  row.className = 'row';
-  row.innerHTML = `
+    function enqueue(file) {
+      const id = ++nextId;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
     <div class="row-name"></div>
     <div class="row-state">queued</div>
     <div class="row-bar"><div class="row-bar-fill"></div></div>
   `;
-  row.querySelector('.row-name').textContent = file.name;
-  rowsEl.appendChild(row);
+      row.querySelector('.row-name').textContent = file.name;
+      rowsEl.appendChild(row);
 
-  state.items.push({
-    id,
-    file,
-    rowEl: row,
-    barEl: row.querySelector('.row-bar'),
-    barFillEl: row.querySelector('.row-bar-fill'),
-    stateEl: row.querySelector('.row-state'),
-    status: 'pending',
-  });
-}
-
-function updateSummary() {
-  const total = state.items.length;
-  const done = state.items.filter(i => i.status === 'done').length;
-  const err = state.items.filter(i => i.status === 'err').length;
-  countDoneEl.textContent = done;
-  countLabelEl.textContent = 'of ' + total + ' done';
-  summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
-  resetBtn.disabled = state.processing;
-}
-
-// ============================================================
-// Processing pump — serial, so the browser doesn't choke on
-// parallel encodes and downloads feel orderly
-// ============================================================
-async function pump() {
-  if (state.processing) return;
-  state.processing = true;
-  updateSummary();
-
-  while (true) {
-    const next = state.items.find(i => i.status === 'pending');
-    if (!next) break;
-    await processItem(next);
-    updateSummary();
-  }
-
-  state.processing = false;
-  updateSummary();
-  setStatus('');
-}
-
-async function processItem(item) {
-  item.status = 'active';
-  item.stateEl.textContent = 'decoding';
-  item.stateEl.className = 'row-state active';
-  item.barFillEl.style.width = '2%';
-  setStatus('Processing ' + item.file.name + '…');
-
-  try {
-    // --- Decode ---
-    const arrayBuffer = await item.file.arrayBuffer();
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) throw new Error('Web Audio not available in this browser.');
-    const audioCtx = new AudioCtx();
-    let audio;
-    try {
-      audio = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-    } catch (err) {
-      audioCtx.close();
-      throw new Error('Could not decode this file.');
+      state.items.push({
+        id,
+        file,
+        rowEl: row,
+        barEl: row.querySelector('.row-bar'),
+        barFillEl: row.querySelector('.row-bar-fill'),
+        stateEl: row.querySelector('.row-state'),
+        status: 'pending',
+      });
     }
-    audioCtx.close();
-    item.barFillEl.style.width = '15%';
 
-    // --- Encode ---
-    item.stateEl.textContent = 'encoding';
-    const mp3Blob = await encodeMp3(audio, (pct) => {
-      // Encoding spans 15% -> 95% of the bar
-      item.barFillEl.style.width = (15 + pct * 0.80) + '%';
-    }, item.file.name);
-    item.barFillEl.style.width = '98%';
-
-    // --- Download ---
-    item.stateEl.textContent = 'saving';
-    const outName = swapExt(item.file.name, 'mp3');
-    triggerDownload(mp3Blob, outName);
-
-    item.status = 'done';
-    item.barEl.classList.add('done');
-    item.stateEl.textContent = 'done';
-    item.stateEl.className = 'row-state ok';
-  } catch (err) {
-    console.error(err);
-    item.status = 'err';
-    item.barEl.classList.add('err');
-    item.stateEl.textContent = 'error';
-    item.stateEl.className = 'row-state err';
-    // Surface the error reason in the row name tooltip for recoverability
-    item.rowEl.querySelector('.row-name').title = err.message || 'Unknown error';
-  }
-}
-
-function swapExt(name, newExt) {
-  const dot = name.lastIndexOf('.');
-  const base = dot > 0 ? name.slice(0, dot) : name;
-  return base + '.' + newExt;
-}
-
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  // Clean up after the click has had a tick to register
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 1000);
-}
-
-// ============================================================
-// MP3 encoding via lamejs
-// ============================================================
-
-// LAME supports MPEG-1 rates {32000, 44100, 48000} and MPEG-2 rates {16000, 22050, 24000}.
-// For anything else, resample (cheaply, with linear interpolation — fine for voice notes,
-// and we're writing 320 kbps so the encoder has plenty of headroom for any artifacts).
-const LAME_SUPPORTED_RATES = [16000, 22050, 24000, 32000, 44100, 48000];
-
-function pickOutputRate(srcRate) {
-  // Prefer exact match, otherwise pick the closest supported rate at or above source,
-  // so we don't downsample unnecessarily. For rates above 48k, clamp to 48k (MP3 ceiling).
-  if (LAME_SUPPORTED_RATES.includes(srcRate)) return srcRate;
-  if (srcRate > 48000) return 48000;
-  for (const r of LAME_SUPPORTED_RATES) {
-    if (r >= srcRate) return r;
-  }
-  return 48000;
-}
-
-function resampleChannel(input, srcRate, dstRate) {
-  if (srcRate === dstRate) return input;
-  const ratio = srcRate / dstRate;
-  const outLen = Math.round(input.length / ratio);
-  const out = new Float32Array(outLen);
-  for (let i = 0; i < outLen; i++) {
-    const srcIdx = i * ratio;
-    const i0 = Math.floor(srcIdx);
-    const i1 = Math.min(i0 + 1, input.length - 1);
-    const frac = srcIdx - i0;
-    out[i] = input[i0] * (1 - frac) + input[i1] * frac;
-  }
-  return out;
-}
-
-function floatToInt16(f32) {
-  const out = new Int16Array(f32.length);
-  for (let i = 0; i < f32.length; i++) {
-    let s = f32[i];
-    if (s > 1) s = 1; else if (s < -1) s = -1;
-    out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  return out;
-}
-
-async function encodeMp3(audio, onProgress, fileTitle) {
-  if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
-    throw new Error('MP3 encoder failed to load. Check your connection and reload.');
-  }
-  const srcRate = audio.sampleRate;
-  const outRate = pickOutputRate(srcRate);
-  const nCh = Math.min(audio.numberOfChannels, 2); // LAME supports 1 or 2
-  const kbps = 320;
-
-  // Pull channel data, resample if needed
-  let left = audio.getChannelData(0);
-  let right = nCh === 2 ? audio.getChannelData(1) : null;
-  if (outRate !== srcRate) {
-    left = resampleChannel(left, srcRate, outRate);
-    if (right) right = resampleChannel(right, srcRate, outRate);
-  }
-
-  const leftI16 = floatToInt16(left);
-  const rightI16 = right ? floatToInt16(right) : null;
-
-  const encoder = new lamejs.Mp3Encoder(nCh, outRate, kbps);
-  const SAMPLE_BLOCK = 1152; // LAME standard frame size
-  const mp3Chunks = [];
-  const totalSamples = leftI16.length;
-  let frameCount = 0;
-
-  // Yield to the event loop periodically so the UI stays responsive
-  let samplesSinceYield = 0;
-  const YIELD_EVERY = 1152 * 50; // ~50 frames between yields
-
-  for (let i = 0; i < totalSamples; i += SAMPLE_BLOCK) {
-    const end = Math.min(i + SAMPLE_BLOCK, totalSamples);
-    const l = leftI16.subarray(i, end);
-    let chunk;
-    if (rightI16) {
-      const r = rightI16.subarray(i, end);
-      chunk = encoder.encodeBuffer(l, r);
-    } else {
-      chunk = encoder.encodeBuffer(l);
+    function updateSummary() {
+      const total = state.items.length;
+      const done = state.items.filter(i => i.status === 'done').length;
+      const err = state.items.filter(i => i.status === 'err').length;
+      countDoneEl.textContent = done;
+      countLabelEl.textContent = 'of ' + total + ' done';
+      summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
+      resetBtn.disabled = state.processing;
     }
-    if (chunk && chunk.length > 0) mp3Chunks.push(chunk);
-    frameCount++;
 
-    samplesSinceYield += (end - i);
-    if (samplesSinceYield >= YIELD_EVERY) {
-      samplesSinceYield = 0;
-      if (onProgress) onProgress(i / totalSamples);
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise(r => setTimeout(r, 0));
+    // ============================================================
+    // Processing pump — serial, so the browser doesn't choke on
+    // parallel encodes and downloads feel orderly
+    // ============================================================
+    async function pump() {
+      if (state.processing) return;
+      state.processing = true;
+      updateSummary();
+
+      while (true) {
+        const next = state.items.find(i => i.status === 'pending');
+        if (!next) break;
+        await processItem(next);
+        updateSummary();
+      }
+
+      state.processing = false;
+      updateSummary();
+      setStatus('');
     }
-  }
 
-  const flush = encoder.flush();
-  if (flush && flush.length > 0) mp3Chunks.push(flush);
+    async function processItem(item) {
+      item.status = 'active';
+      item.stateEl.textContent = 'decoding';
+      item.stateEl.className = 'row-state active';
+      item.barFillEl.style.width = '2%';
+      setStatus('Processing ' + item.file.name + '…');
 
-  // Calculate audio data size for the Info header
-  let audioBytes = 0;
-  for (const c of mp3Chunks) audioBytes += c.length;
+      try {
+        // --- Decode ---
+        const arrayBuffer = await item.file.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) throw new Error('Web Audio not available in this browser.');
+        const audioCtx = new AudioCtx();
+        let audio;
+        try {
+          audio = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        } catch (err) {
+          audioCtx.close();
+          throw new Error('Could not decode this file.');
+        }
+        audioCtx.close();
+        item.barFillEl.style.width = '15%';
 
-  // Build the Info header frame (CBR-marked Xing tag) — this is what makes
-  // QuickTime/Music.app/Finder display "320 kbps" instead of leaving the field blank.
-  // +1 to frame count because the Info frame itself counts as a frame.
-  const infoFrame = buildInfoFrame(outRate, nCh, kbps, frameCount + 1, audioBytes);
+        // --- Encode ---
+        item.stateEl.textContent = 'encoding';
+        const mp3Blob = await encodeMp3(audio, (pct) => {
+          // Encoding spans 15% -> 95% of the bar
+          item.barFillEl.style.width = (15 + pct * 0.80) + '%';
+        }, item.file.name);
+        item.barFillEl.style.width = '98%';
 
-  // Build a small ID3v2.3 tag with the title — gives the file proper identity in
-  // Music.app and other libraries, and matches what well-formed MP3s look like.
-  const id3Tag = buildId3v2Tag(fileTitle || 'Untitled');
+        // --- Download ---
+        item.stateEl.textContent = 'saving';
+        const outName = swapExt(item.file.name, 'mp3');
+        triggerDownload(mp3Blob, outName);
 
-  if (onProgress) onProgress(1);
-  return new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
-}
+        item.status = 'done';
+        item.barEl.classList.add('done');
+        item.stateEl.textContent = 'done';
+        item.stateEl.className = 'row-state ok';
+      } catch (err) {
+        console.error(err);
+        item.status = 'err';
+        item.barEl.classList.add('err');
+        item.stateEl.textContent = 'error';
+        item.stateEl.className = 'row-state err';
+        // Surface the error reason in the row name tooltip for recoverability
+        item.rowEl.querySelector('.row-name').title = err.message || 'Unknown error';
+      }
+    }
 
-// ============================================================
-// Xing/Info header — CBR variant ("Info" magic, not "Xing")
-// Spec: https://www.codeproject.com/Articles/8295/MPEG-Audio-Frame-Header
-// LAME tag spec: https://wiki.hydrogenaud.io/index.php?title=MP3#VBRI.2C_XING.2C_and_LAME_headers
-// ============================================================
+    function swapExt(name, newExt) {
+      const dot = name.lastIndexOf('.');
+      const base = dot > 0 ? name.slice(0, dot) : name;
+      return base + '.' + newExt;
+    }
 
-// Frame size lookup: how many bytes a single MPEG frame occupies at a given
-// (mpeg version, sample rate, bitrate). For 320 kbps:
-//   MPEG-1 @ 48000 Hz: 960 bytes
-//   MPEG-1 @ 44100 Hz: 1044 (or 1045 with padding) bytes
-//   MPEG-1 @ 32000 Hz: 1440 bytes
-// Formula: floor(144 * bitrate / sampleRate) [+ padding byte if applicable]
-function mp3FrameSize(sampleRate, bitrateKbps) {
-  return Math.floor((144 * bitrateKbps * 1000) / sampleRate);
-}
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      // Clean up after the click has had a tick to register
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
 
-// Side info length for MPEG-1 / MPEG-2 + mono/stereo
-function sideInfoLength(mpegVersion, channels) {
-  if (mpegVersion === 1) return channels === 1 ? 17 : 32;
-  return channels === 1 ? 9 : 17; // MPEG-2/2.5
-}
+    // ============================================================
+    // MP3 encoding via lamejs
+    // ============================================================
 
-function buildInfoFrame(sampleRate, channels, bitrateKbps, totalFrames, audioBytes) {
-  // MPEG version: 1 for 32k/44.1k/48k, 2 for 16k/22.05k/24k
-  const mpeg1Rates = [32000, 44100, 48000];
-  const mpeg2Rates = [16000, 22050, 24000];
-  let mpegVersion, versionBits;
-  if (mpeg1Rates.includes(sampleRate)) {
-    mpegVersion = 1;
-    versionBits = 0b11; // MPEG-1
-  } else if (mpeg2Rates.includes(sampleRate)) {
-    mpegVersion = 2;
-    versionBits = 0b10; // MPEG-2
-  } else {
-    mpegVersion = 1;
-    versionBits = 0b11; // fallback
-  }
+    // LAME supports MPEG-1 rates {32000, 44100, 48000} and MPEG-2 rates {16000, 22050, 24000}.
+    // For anything else, resample (cheaply, with linear interpolation — fine for voice notes,
+    // and we're writing 320 kbps so the encoder has plenty of headroom for any artifacts).
+    const LAME_SUPPORTED_RATES = [16000, 22050, 24000, 32000, 44100, 48000];
 
-  // Bitrate index for Layer III at this MPEG version
-  // MPEG-1 Layer III bitrate table (kbps): _,32,40,48,56,64,80,96,112,128,160,192,224,256,320,_
-  // MPEG-2 Layer III bitrate table (kbps): _,8,16,24,32,40,48,56,64,80,96,112,128,144,160,_
-  const mpeg1L3Rates = [0,32,40,48,56,64,80,96,112,128,160,192,224,256,320];
-  const mpeg2L3Rates = [0,8,16,24,32,40,48,56,64,80,96,112,128,144,160];
-  const rateTable = mpegVersion === 1 ? mpeg1L3Rates : mpeg2L3Rates;
-  let bitrateIdx = rateTable.indexOf(bitrateKbps);
-  if (bitrateIdx < 0) bitrateIdx = rateTable.length - 1; // clamp to max
+    function pickOutputRate(srcRate) {
+      // Prefer exact match, otherwise pick the closest supported rate at or above source,
+      // so we don't downsample unnecessarily. For rates above 48k, clamp to 48k (MP3 ceiling).
+      if (LAME_SUPPORTED_RATES.includes(srcRate)) return srcRate;
+      if (srcRate > 48000) return 48000;
+      for (const r of LAME_SUPPORTED_RATES) {
+        if (r >= srcRate) return r;
+      }
+      return 48000;
+    }
 
-  // Sample rate index for this MPEG version
-  const sr1 = [44100, 48000, 32000];
-  const sr2 = [22050, 24000, 16000];
-  const srTable = mpegVersion === 1 ? sr1 : sr2;
-  let srIdx = srTable.indexOf(sampleRate);
-  if (srIdx < 0) srIdx = 0;
+    function resampleChannel(input, srcRate, dstRate) {
+      if (srcRate === dstRate) return input;
+      const ratio = srcRate / dstRate;
+      const outLen = Math.round(input.length / ratio);
+      const out = new Float32Array(outLen);
+      for (let i = 0; i < outLen; i++) {
+        const srcIdx = i * ratio;
+        const i0 = Math.floor(srcIdx);
+        const i1 = Math.min(i0 + 1, input.length - 1);
+        const frac = srcIdx - i0;
+        out[i] = input[i0] * (1 - frac) + input[i1] * frac;
+      }
+      return out;
+    }
 
-  const frameSize = mp3FrameSize(sampleRate, bitrateKbps);
-  const sideLen = sideInfoLength(mpegVersion, channels);
-  const channelMode = channels === 1 ? 0b11 : 0b00; // mono : stereo
+    function floatToInt16(f32) {
+      const out = new Int16Array(f32.length);
+      for (let i = 0; i < f32.length; i++) {
+        let s = f32[i];
+        if (s > 1) s = 1; else if (s < -1) s = -1;
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return out;
+    }
 
-  // Build the frame: 4-byte header + side info (zeroed) + Info tag + padding to frameSize
-  const frame = new Uint8Array(frameSize);
+    async function encodeMp3(audio, onProgress, fileTitle) {
+      if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
+        throw new Error('MP3 encoder failed to load. Check your connection and reload.');
+      }
+      const srcRate = audio.sampleRate;
+      const outRate = pickOutputRate(srcRate);
+      const nCh = Math.min(audio.numberOfChannels, 2); // LAME supports 1 or 2
+      const kbps = 320;
 
-  // MPEG audio frame header (4 bytes / 32 bits):
-  //  AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
-  //  A: sync (11 bits, all 1s)
-  //  B: MPEG version (2 bits)
-  //  C: Layer (2 bits) — 01 = Layer III
-  //  D: Protection bit (1 bit) — 1 = no CRC
-  //  E: Bitrate index (4 bits)
-  //  F: Sample rate index (2 bits)
-  //  G: Padding (1 bit)
-  //  H: Private (1 bit)
-  //  I: Channel mode (2 bits)
-  //  J: Mode extension (2 bits)
-  //  K: Copyright (1 bit)
-  //  L: Original (1 bit)
-  //  M: Emphasis (2 bits)
-  frame[0] = 0xFF;
-  frame[1] = 0xE0 | (versionBits << 3) | (0b01 << 1) | 1; // version, Layer III, no CRC
-  frame[2] = (bitrateIdx << 4) | (srIdx << 2) | 0; // no padding
-  frame[3] = (channelMode << 6) | 0; // no mode ext, no copyright/orig flags
+      // Pull channel data, resample if needed
+      let left = audio.getChannelData(0);
+      let right = nCh === 2 ? audio.getChannelData(1) : null;
+      if (outRate !== srcRate) {
+        left = resampleChannel(left, srcRate, outRate);
+        if (right) right = resampleChannel(right, srcRate, outRate);
+      }
 
-  // Info tag location: right after side info
-  const tagStart = 4 + sideLen;
+      const leftI16 = floatToInt16(left);
+      const rightI16 = right ? floatToInt16(right) : null;
 
-  // "Info" magic (CBR variant of Xing header). "Xing" would mark VBR.
-  frame[tagStart + 0] = 0x49; // I
-  frame[tagStart + 1] = 0x6E; // n
-  frame[tagStart + 2] = 0x66; // f
-  frame[tagStart + 3] = 0x6F; // o
+      const encoder = new lamejs.Mp3Encoder(nCh, outRate, kbps);
+      const SAMPLE_BLOCK = 1152; // LAME standard frame size
+      const mp3Chunks = [];
+      const totalSamples = leftI16.length;
+      let frameCount = 0;
 
-  // Flags: 0x0007 = frames + bytes + TOC present (no quality field)
-  // We include TOC as zeros — many players require it to seek properly.
-  frame[tagStart + 4] = 0x00;
-  frame[tagStart + 5] = 0x00;
-  frame[tagStart + 6] = 0x00;
-  frame[tagStart + 7] = 0x07;
+      // Yield to the event loop periodically so the UI stays responsive
+      let samplesSinceYield = 0;
+      const YIELD_EVERY = 1152 * 50; // ~50 frames between yields
 
-  // Total frames (32-bit big endian)
-  writeUint32BE(frame, tagStart + 8, totalFrames);
+      for (let i = 0; i < totalSamples; i += SAMPLE_BLOCK) {
+        const end = Math.min(i + SAMPLE_BLOCK, totalSamples);
+        const l = leftI16.subarray(i, end);
+        let chunk;
+        if (rightI16) {
+          const r = rightI16.subarray(i, end);
+          chunk = encoder.encodeBuffer(l, r);
+        } else {
+          chunk = encoder.encodeBuffer(l);
+        }
+        if (chunk && chunk.length > 0) mp3Chunks.push(chunk);
+        frameCount++;
 
-  // Total bytes of audio data (the file minus this header frame, big endian)
-  writeUint32BE(frame, tagStart + 12, audioBytes);
+        samplesSinceYield += (end - i);
+        if (samplesSinceYield >= YIELD_EVERY) {
+          samplesSinceYield = 0;
+          if (onProgress) onProgress(i / totalSamples);
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(r => setTimeout(r, 0));
+        }
+      }
 
-  // 100-byte TOC, all zeros (acceptable — just disables fast seeking)
-  // Already zero from Uint8Array initialization.
+      const flush = encoder.flush();
+      if (flush && flush.length > 0) mp3Chunks.push(flush);
 
-  return frame;
-}
+      // Calculate audio data size for the Info header
+      let audioBytes = 0;
+      for (const c of mp3Chunks) audioBytes += c.length;
 
-function writeUint32BE(arr, offset, value) {
-  arr[offset]     = (value >>> 24) & 0xFF;
-  arr[offset + 1] = (value >>> 16) & 0xFF;
-  arr[offset + 2] = (value >>> 8) & 0xFF;
-  arr[offset + 3] = value & 0xFF;
-}
+      // Build the Info header frame (CBR-marked Xing tag) — this is what makes
+      // QuickTime/Music.app/Finder display "320 kbps" instead of leaving the field blank.
+      // +1 to frame count because the Info frame itself counts as a frame.
+      const infoFrame = buildInfoFrame(outRate, nCh, kbps, frameCount + 1, audioBytes);
 
-// ============================================================
-// ID3v2.3 tag — minimal, just a TIT2 (title) frame
-// ============================================================
-function buildId3v2Tag(title) {
-  // Strip extension from title, keep it ASCII-safe-ish
-  const cleanTitle = title.replace(/\.[^.]+$/, '');
-  const titleBytes = stringToUtf8(cleanTitle);
+      // Build a small ID3v2.3 tag with the title — gives the file proper identity in
+      // Music.app and other libraries, and matches what well-formed MP3s look like.
+      const id3Tag = buildId3v2Tag(fileTitle || 'Untitled');
 
-  // TIT2 frame: 4-byte ID + 4-byte size + 2-byte flags + 1-byte encoding + payload
-  // Encoding 0x03 = UTF-8 (ID3v2.4) — but we're writing v2.3 so use 0x01 (UTF-16 with BOM)
-  // Simpler: use 0x00 (ISO-8859-1) and let the title be ASCII. Voice notes typically have ASCII names.
-  // Safer for unicode: use 0x01 with BOM.
-  const titleUtf16 = stringToUtf16LE(cleanTitle);
-  const tit2Payload = new Uint8Array(1 + 2 + titleUtf16.length);
-  tit2Payload[0] = 0x01; // UTF-16 with BOM
-  tit2Payload[1] = 0xFF; // BOM low
-  tit2Payload[2] = 0xFE; // BOM high (little endian)
-  tit2Payload.set(titleUtf16, 3);
+      if (onProgress) onProgress(1);
+      return new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
+    }
 
-  const tit2Header = new Uint8Array(10);
-  tit2Header[0] = 0x54; // T
-  tit2Header[1] = 0x49; // I
-  tit2Header[2] = 0x54; // T
-  tit2Header[3] = 0x32; // 2
-  // Frame size (32-bit big endian, NOT syncsafe in v2.3)
-  writeUint32BE(tit2Header, 4, tit2Payload.length);
-  // Flags: 0x0000
-  tit2Header[8] = 0x00;
-  tit2Header[9] = 0x00;
+    // ============================================================
+    // Xing/Info header — CBR variant ("Info" magic, not "Xing")
+    // Spec: https://www.codeproject.com/Articles/8295/MPEG-Audio-Frame-Header
+    // LAME tag spec: https://wiki.hydrogenaud.io/index.php?title=MP3#VBRI.2C_XING.2C_and_LAME_headers
+    // ============================================================
 
-  const frameTotal = tit2Header.length + tit2Payload.length;
+    // Frame size lookup: how many bytes a single MPEG frame occupies at a given
+    // (mpeg version, sample rate, bitrate). For 320 kbps:
+    //   MPEG-1 @ 48000 Hz: 960 bytes
+    //   MPEG-1 @ 44100 Hz: 1044 (or 1045 with padding) bytes
+    //   MPEG-1 @ 32000 Hz: 1440 bytes
+    // Formula: floor(144 * bitrate / sampleRate) [+ padding byte if applicable]
+    function mp3FrameSize(sampleRate, bitrateKbps) {
+      return Math.floor((144 * bitrateKbps * 1000) / sampleRate);
+    }
 
-  // ID3v2 header: "ID3" + version (2 bytes) + flags (1 byte) + size (4 bytes syncsafe)
-  const id3Header = new Uint8Array(10);
-  id3Header[0] = 0x49; // I
-  id3Header[1] = 0x44; // D
-  id3Header[2] = 0x33; // 3
-  id3Header[3] = 0x03; // v2.3
-  id3Header[4] = 0x00;
-  id3Header[5] = 0x00; // flags
-  // Syncsafe size: 4 bytes, each holding 7 bits
-  const sz = frameTotal;
-  id3Header[6] = (sz >>> 21) & 0x7F;
-  id3Header[7] = (sz >>> 14) & 0x7F;
-  id3Header[8] = (sz >>> 7) & 0x7F;
-  id3Header[9] = sz & 0x7F;
+    // Side info length for MPEG-1 / MPEG-2 + mono/stereo
+    function sideInfoLength(mpegVersion, channels) {
+      if (mpegVersion === 1) return channels === 1 ? 17 : 32;
+      return channels === 1 ? 9 : 17; // MPEG-2/2.5
+    }
 
-  const out = new Uint8Array(id3Header.length + frameTotal);
-  out.set(id3Header, 0);
-  out.set(tit2Header, id3Header.length);
-  out.set(tit2Payload, id3Header.length + tit2Header.length);
-  return out;
-}
+    function buildInfoFrame(sampleRate, channels, bitrateKbps, totalFrames, audioBytes) {
+      // MPEG version: 1 for 32k/44.1k/48k, 2 for 16k/22.05k/24k
+      const mpeg1Rates = [32000, 44100, 48000];
+      const mpeg2Rates = [16000, 22050, 24000];
+      let mpegVersion, versionBits;
+      if (mpeg1Rates.includes(sampleRate)) {
+        mpegVersion = 1;
+        versionBits = 0b11; // MPEG-1
+      } else if (mpeg2Rates.includes(sampleRate)) {
+        mpegVersion = 2;
+        versionBits = 0b10; // MPEG-2
+      } else {
+        mpegVersion = 1;
+        versionBits = 0b11; // fallback
+      }
 
-function stringToUtf8(str) {
-  return new TextEncoder().encode(str);
-}
+      // Bitrate index for Layer III at this MPEG version
+      // MPEG-1 Layer III bitrate table (kbps): _,32,40,48,56,64,80,96,112,128,160,192,224,256,320,_
+      // MPEG-2 Layer III bitrate table (kbps): _,8,16,24,32,40,48,56,64,80,96,112,128,144,160,_
+      const mpeg1L3Rates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+      const mpeg2L3Rates = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+      const rateTable = mpegVersion === 1 ? mpeg1L3Rates : mpeg2L3Rates;
+      let bitrateIdx = rateTable.indexOf(bitrateKbps);
+      if (bitrateIdx < 0) bitrateIdx = rateTable.length - 1; // clamp to max
 
-function stringToUtf16LE(str) {
-  const out = new Uint8Array(str.length * 2);
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    out[i * 2] = code & 0xFF;
-    out[i * 2 + 1] = (code >>> 8) & 0xFF;
-  }
-  return out;
-}
-</script>
+      // Sample rate index for this MPEG version
+      const sr1 = [44100, 48000, 32000];
+      const sr2 = [22050, 24000, 16000];
+      const srTable = mpegVersion === 1 ? sr1 : sr2;
+      let srIdx = srTable.indexOf(sampleRate);
+      if (srIdx < 0) srIdx = 0;
+
+      const frameSize = mp3FrameSize(sampleRate, bitrateKbps);
+      const sideLen = sideInfoLength(mpegVersion, channels);
+      const channelMode = channels === 1 ? 0b11 : 0b00; // mono : stereo
+
+      // Build the frame: 4-byte header + side info (zeroed) + Info tag + padding to frameSize
+      const frame = new Uint8Array(frameSize);
+
+      // MPEG audio frame header (4 bytes / 32 bits):
+      //  AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
+      //  A: sync (11 bits, all 1s)
+      //  B: MPEG version (2 bits)
+      //  C: Layer (2 bits) — 01 = Layer III
+      //  D: Protection bit (1 bit) — 1 = no CRC
+      //  E: Bitrate index (4 bits)
+      //  F: Sample rate index (2 bits)
+      //  G: Padding (1 bit)
+      //  H: Private (1 bit)
+      //  I: Channel mode (2 bits)
+      //  J: Mode extension (2 bits)
+      //  K: Copyright (1 bit)
+      //  L: Original (1 bit)
+      //  M: Emphasis (2 bits)
+      frame[0] = 0xFF;
+      frame[1] = 0xE0 | (versionBits << 3) | (0b01 << 1) | 1; // version, Layer III, no CRC
+      frame[2] = (bitrateIdx << 4) | (srIdx << 2) | 0; // no padding
+      frame[3] = (channelMode << 6) | 0; // no mode ext, no copyright/orig flags
+
+      // Info tag location: right after side info
+      const tagStart = 4 + sideLen;
+
+      // "Info" magic (CBR variant of Xing header). "Xing" would mark VBR.
+      frame[tagStart + 0] = 0x49; // I
+      frame[tagStart + 1] = 0x6E; // n
+      frame[tagStart + 2] = 0x66; // f
+      frame[tagStart + 3] = 0x6F; // o
+
+      // Flags: 0x0007 = frames + bytes + TOC present (no quality field)
+      // We include TOC as zeros — many players require it to seek properly.
+      frame[tagStart + 4] = 0x00;
+      frame[tagStart + 5] = 0x00;
+      frame[tagStart + 6] = 0x00;
+      frame[tagStart + 7] = 0x07;
+
+      // Total frames (32-bit big endian)
+      writeUint32BE(frame, tagStart + 8, totalFrames);
+
+      // Total bytes of audio data (the file minus this header frame, big endian)
+      writeUint32BE(frame, tagStart + 12, audioBytes);
+
+      // 100-byte TOC, all zeros (acceptable — just disables fast seeking)
+      // Already zero from Uint8Array initialization.
+
+      return frame;
+    }
+
+    function writeUint32BE(arr, offset, value) {
+      arr[offset] = (value >>> 24) & 0xFF;
+      arr[offset + 1] = (value >>> 16) & 0xFF;
+      arr[offset + 2] = (value >>> 8) & 0xFF;
+      arr[offset + 3] = value & 0xFF;
+    }
+
+    // ============================================================
+    // ID3v2.3 tag — minimal, just a TIT2 (title) frame
+    // ============================================================
+    function buildId3v2Tag(title) {
+      // Strip extension from title, keep it ASCII-safe-ish
+      const cleanTitle = title.replace(/\.[^.]+$/, '');
+      const titleBytes = stringToUtf8(cleanTitle);
+
+      // TIT2 frame: 4-byte ID + 4-byte size + 2-byte flags + 1-byte encoding + payload
+      // Encoding 0x03 = UTF-8 (ID3v2.4) — but we're writing v2.3 so use 0x01 (UTF-16 with BOM)
+      // Simpler: use 0x00 (ISO-8859-1) and let the title be ASCII. Voice notes typically have ASCII names.
+      // Safer for unicode: use 0x01 with BOM.
+      const titleUtf16 = stringToUtf16LE(cleanTitle);
+      const tit2Payload = new Uint8Array(1 + 2 + titleUtf16.length);
+      tit2Payload[0] = 0x01; // UTF-16 with BOM
+      tit2Payload[1] = 0xFF; // BOM low
+      tit2Payload[2] = 0xFE; // BOM high (little endian)
+      tit2Payload.set(titleUtf16, 3);
+
+      const tit2Header = new Uint8Array(10);
+      tit2Header[0] = 0x54; // T
+      tit2Header[1] = 0x49; // I
+      tit2Header[2] = 0x54; // T
+      tit2Header[3] = 0x32; // 2
+      // Frame size (32-bit big endian, NOT syncsafe in v2.3)
+      writeUint32BE(tit2Header, 4, tit2Payload.length);
+      // Flags: 0x0000
+      tit2Header[8] = 0x00;
+      tit2Header[9] = 0x00;
+
+      const frameTotal = tit2Header.length + tit2Payload.length;
+
+      // ID3v2 header: "ID3" + version (2 bytes) + flags (1 byte) + size (4 bytes syncsafe)
+      const id3Header = new Uint8Array(10);
+      id3Header[0] = 0x49; // I
+      id3Header[1] = 0x44; // D
+      id3Header[2] = 0x33; // 3
+      id3Header[3] = 0x03; // v2.3
+      id3Header[4] = 0x00;
+      id3Header[5] = 0x00; // flags
+      // Syncsafe size: 4 bytes, each holding 7 bits
+      const sz = frameTotal;
+      id3Header[6] = (sz >>> 21) & 0x7F;
+      id3Header[7] = (sz >>> 14) & 0x7F;
+      id3Header[8] = (sz >>> 7) & 0x7F;
+      id3Header[9] = sz & 0x7F;
+
+      const out = new Uint8Array(id3Header.length + frameTotal);
+      out.set(id3Header, 0);
+      out.set(tit2Header, id3Header.length);
+      out.set(tit2Payload, id3Header.length + tit2Header.length);
+      return out;
+    }
+
+    function stringToUtf8(str) {
+      return new TextEncoder().encode(str);
+    }
+
+    function stringToUtf16LE(str) {
+      const out = new Uint8Array(str.length * 2);
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        out[i * 2] = code & 0xFF;
+        out[i * 2 + 1] = (code >>> 8) & 0xFF;
+      }
+      return out;
+    }
+  </script>
 </body>
+
 </html>
