@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<title>LUFSbaby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f3ef;
+    --panel: #ebe8e2;
+    --panel-2: #e0ddd6;
+    --ink: #222;
+    --dim: #777;
+    --dimmer: #aaa;
+    --line: #d4d1c9;
+    --warn: #9a3520;
+    --ok: #2a6f4a;
+    --accent: #2a6f4a;
+    --tooltip-bg: #222;
+    --tooltip-ink: #f5f3ef;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121212;
+    --panel: #1c1c1c;
+    --panel-2: #242424;
+    --ink: #e8e8e8;
+    --dim: #888;
+    --dimmer: #555;
+    --line: #2e2e2e;
+    --warn: #e5634a;
+    --ok: #8ace00;
+    --accent: #8ace00;
+    --tooltip-bg: #e8e8e8;
+    --tooltip-ink: #121212;
+  }
+  html { transition: background 0.2s; background: var(--bg); min-height: 100%; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  body { padding: 1.5rem 1.25rem 3rem; }
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+    gap: 1rem;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  h1 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .tag { font-size: 0.7rem; color: var(--dim); }
+  .theme-toggle {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s;
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+    color: var(--ink);
+  }
+  .theme-toggle:hover { border-color: var(--ink); }
+  .theme-toggle .tm-arrow { color: var(--dim); }
+  /* Active mode = full ink; inactive mode = dimmed */
+  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
+  /* Arrow direction flips with mode */
+  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
+  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
+
+  .drop {
+    border: 1px dashed var(--dimmer);
+    background: var(--panel);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    display: block;
+  }
+  .drop:hover, .drop.hover {
+    background: var(--panel-2);
+    border-color: var(--ink);
+  }
+  .drop-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
+  .drop-sub { font-size: 0.7rem; color: var(--dim); }
+  .drop input { display: none; }
+
+  .status {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--dim);
+    min-height: 1em;
+  }
+  .status.err { color: var(--warn); }
+
+  .results { margin-top: 1.25rem; display: none; }
+  .results.show { display: block; }
+
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    margin-bottom: 0.75rem;
+  }
+  .section-head {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: var(--dim);
+    cursor: help;
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .info svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .info svg .info-ring { stroke: currentColor; }
+  .info svg .info-dot,
+  .info svg .info-stem { fill: currentColor; }
+  .info:hover, .info.open { color: var(--ink); }
+  .info-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-width: calc(100vw - 2.5rem);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-ink);
+    border: 1px solid var(--tooltip-bg);
+    padding: 0.6rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    z-index: 10;
+    display: none;
+    text-align: left;
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  /* Desktop: show on hover. Hover media query excludes touch-only devices. */
+  @media (hover: hover) {
+    .info:hover .info-panel { display: block; }
+  }
+  /* All devices: show when explicitly opened (click/tap/keyboard). */
+  .info.open .info-panel { display: block; }
+  .info-panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.6rem; }
+  .info-panel dt { font-weight: 700; color: var(--tooltip-ink); white-space: nowrap; }
+  .info-panel dd { color: var(--tooltip-ink); opacity: 0.85; }
+  .section-body { padding: 0.75rem; }
+
+  .file-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .file-name { font-size: 0.8rem; font-weight: 500; word-break: break-all; }
+  .file-meta { font-size: 0.7rem; color: var(--dim); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .headline {
+    padding: 0.75rem 0.75rem 0.85rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .headline-label {
+    color: var(--dim);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.15rem;
+  }
+  .headline-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .headline-unit {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--dim);
+    margin-left: 0.4rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    vertical-align: 0.2em;
+  }
+  .character-grid {
+    margin-top: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+  }
+  .character-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .character-axis {
+    color: var(--dim);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .character-value {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+  .character-psr {
+    color: var(--dim);
+    font-weight: 400;
+    margin-left: 0.4rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  /* On narrow screens, stack the two character cells */
+  @media (max-width: 420px) {
+    .character-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.8rem;
+  }
+  .stat:nth-child(odd) { border-right: 1px solid var(--line); }
+  /* Last item sits alone on its row when stat count is odd — remove its bottom border */
+  .stat:last-child { border-bottom: none; }
+  /* When item is on the last row but paired (even total count), also remove bottom border */
+  .stat:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+  .stat-label { color: var(--dim); }
+  .stat-value { font-weight: 500; }
+  .stat-value.hero { font-weight: 700; color: var(--accent); }
+
+  .target {
+    display: grid;
+    grid-template-columns: 140px 1fr 70px;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .target:last-child { border-bottom: none; }
+  .target-name {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .target-target { color: var(--dim); font-size: 0.7rem; }
+  .target-delta { text-align: right; font-weight: 700; }
+  .target-delta.ok { color: var(--ok); }
+  .target-delta.warn { color: var(--warn); }
+  .bar {
+    position: relative;
+    height: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+  }
+  .bar-center {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--dim);
+  }
+  .bar-fill {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: var(--ink);
+    opacity: 0.6;
+  }
+  .bar-fill.warn { background: var(--warn); }
+
+  .reset {
+    margin-top: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    padding: 0.4rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .reset:hover { color: var(--ink); border-color: var(--ink); }
+
+  footer {
+    margin-top: 1.5rem;
+    font-size: 0.65rem;
+    color: var(--dim);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  /* Footer variant: styled as plain text word, not a circle */
+  .info.info-footer-word {
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    font-family: inherit;
+    font-style: normal;
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--dim);
+    padding: 0;
+    background: none;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    border-bottom: 1px dotted var(--dimmer);
+  }
+  .info.info-footer-word:hover,
+  .info.info-footer-word.open {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  /* Footer tooltip: anchor to center instead of right edge */
+  .info-panel-footer {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 8px);
+    top: auto;
+    width: 300px;
+    max-width: calc(100vw - 2rem);
+  }
+  .privacy-head {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+  }
+  .info-panel-footer p {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+  }
+  .info-panel-footer p:last-child { margin-bottom: 0; }
+  /* On mobile, pin the tooltip to the viewport bottom so it can't be clipped
+     by the button's position in the footer line. */
+  @media (max-width: 500px) {
+    .info-panel-footer {
+      position: fixed;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      top: auto;
+      transform: none;
+      width: auto;
+      max-width: none;
+    }
+  }
+
+  @media (max-width: 500px) {
+    .stats { grid-template-columns: 1fr; }
+    .stat:nth-child(odd) { border-right: none; }
+    .stat:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+    .target { grid-template-columns: 1fr 60px; }
+    .target .bar { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LUFSbaby</h1>
+    <div class="header-right">
+      <div class="tag">ITU-R BS.1770-4</div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+    </div>
+  </header>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg">
+    <div class="drop-title">Drop an audio file here, or click to select</div>
+    <div class="drop-sub">WAV · MP3 · AIFF · M4A · FLAC · OGG</div>
+  </label>
+
+  <div class="status" id="status"></div>
+
+  <div class="results" id="results">
+    <div class="section">
+      <div class="section-head">File</div>
+      <div class="section-body">
+        <div class="file-row">
+          <div class="file-name" id="fname">—</div>
+          <div class="file-meta" id="fmeta">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <span>Loudness</span>
+        <button class="info" type="button" id="loudnessInfo" aria-label="About these metrics" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
+          <dl>
+            <dt>Integrated</dt><dd>Average loudness over the whole track. The number platforms use to normalize playback.</dd>
+            <dt>Loudness Range</dt><dd>Difference between quiet and loud sections. Bigger = more dynamic.</dd>
+            <dt>Short-term Range</dt><dd>Where the loudest and quietest sections of your track actually sit. The chorus vs. verse read.</dd>
+            <dt>True Peak</dt><dd>Highest peak including between-sample peaks. Your ceiling for avoiding distortion after lossy encoding.</dd>
+            <dt>Sample Peak</dt><dd>Highest raw sample value. Doesn't catch inter-sample peaks.</dd>
+            <dt>RMS</dt><dd>Average signal power (unweighted). Rough feel for perceived level.</dd>
+            <dt>Crest Factor</dt><dd>Peak minus RMS. High = punchy/dynamic, low = squashed/limited.</dd>
+            <dt>Dynamic Character</dt><dd>PSR (peak-to-short-term-loudness) classification. Higher = more open, lower = more compressed. Independent of loudness.</dd>
+            <dt>Master Condition</dt><dd>Plain-language read on the state of your master based on integrated LUFS. Ready to Ship is the target; extremes on either side read as unfinished.</dd>
+          </dl>
+        </span></button>
+      </div>
+      <div class="headline">
+        <div class="headline-label">Integrated Loudness</div>
+        <div class="headline-value" id="lufsI">—</div>
+        <div class="character-grid">
+          <div class="character-cell">
+            <div class="character-axis">Master Condition</div>
+            <div class="character-value" id="loudLabel">—</div>
+          </div>
+          <div class="character-cell">
+            <div class="character-axis">Dynamic Character</div>
+            <div class="character-value">
+              <span id="dynLabel">—</span>
+              <span class="character-psr" id="dynPsr"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">Loudness Range</span><span class="stat-value" id="lra">—</span></div>
+        <div class="stat"><span class="stat-label">Short-term Range</span><span class="stat-value" id="stRange">—</span></div>
+        <div class="stat"><span class="stat-label">True Peak</span><span class="stat-value" id="truepeak">—</span></div>
+        <div class="stat"><span class="stat-label">Sample Peak</span><span class="stat-value" id="peak">—</span></div>
+        <div class="stat"><span class="stat-label">RMS</span><span class="stat-value" id="rms">—</span></div>
+        <div class="stat"><span class="stat-label">Crest Factor</span><span class="stat-value" id="crest">—</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">vs. Platform Targets</div>
+      <div id="targetList"></div>
+    </div>
+
+    <button class="reset" id="reset">Analyze another file</button>
+  </div>
+
+  <footer>
+    <span>K-weighted · gated · © Sync Beast LLC ·</span>
+    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+      <div class="privacy-head">Your audio stays on your device.</div>
+      <p>LUFSbaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
+      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
+    </span></button>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// Theme toggle
+// ============================================================
+(function initTheme() {
+  const saved = (() => {
+    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+  })();
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('lufs-theme', next); } catch (e) {}
+    });
+  }
+
+  // Info tooltips: click-to-toggle, tap-outside or Escape to close.
+  // Desktop hover behavior is preserved via CSS @media (hover: hover).
+  // Applies to every .info button on the page (Loudness info, Privacy info, etc.)
+  const infos = document.querySelectorAll('.info');
+  const closeAll = () => {
+    infos.forEach(el => {
+      el.classList.remove('open');
+      el.setAttribute('aria-expanded', 'false');
+    });
+  };
+  infos.forEach(info => {
+    info.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = info.classList.contains('open');
+      closeAll(); // close any other open tooltip first
+      if (!wasOpen) {
+        info.classList.add('open');
+        info.setAttribute('aria-expanded', 'true');
+      }
+    });
+    const panel = info.querySelector('.info-panel');
+    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+});
+
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+const status = document.getElementById('status');
+const results = document.getElementById('results');
+
+['dragenter', 'dragover'].forEach(evt => {
+  drop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    drop.classList.add('hover');
+  });
+});
+['dragleave', 'drop'].forEach(evt => {
+  drop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    drop.classList.remove('hover');
+  });
+});
+drop.addEventListener('drop', (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (f) handleFile(f);
+});
+document.getElementById('reset').addEventListener('click', () => {
+  results.classList.remove('show');
+  fileInput.value = '';
+  status.textContent = '';
+  status.className = 'status';
+});
+
+function setStatus(msg, kind = '') {
+  status.textContent = msg;
+  status.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+async function handleFile(file) {
+  results.classList.remove('show');
+  setStatus('Decoding ' + file.name + '…');
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let audio;
+    try {
+      audio = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    } catch (err) {
+      throw new Error('Could not decode this file. Try WAV, MP3, M4A, FLAC, or OGG.');
+    }
+    ctx.close();
+    setStatus('Measuring…');
+    await new Promise(r => setTimeout(r, 20));
+    const stats = analyze(audio);
+    renderResults(file.name, audio, stats);
+    setStatus('');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error — ' + err.message, 'err');
+  }
+}
+
+function kWeightingCoeffs(sr) {
+  return {
+    pre: highShelfBiquad(1681.974450955533, 0.7071752369554193, 3.999843853973347, sr),
+    rlb: highPassBiquad(38.13547087602444, 0.5003270373238773, sr),
+  };
+}
+function highShelfBiquad(f0, Q, gainDb, sr) {
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * f0 / sr;
+  const cosW = Math.cos(w0);
+  const sinW = Math.sin(w0);
+  const alpha = sinW / (2 * Q);
+  const sqrtA2a = 2 * Math.sqrt(A) * alpha;
+  const b0 = A * ((A + 1) + (A - 1) * cosW + sqrtA2a);
+  const b1 = -2 * A * ((A - 1) + (A + 1) * cosW);
+  const b2 = A * ((A + 1) + (A - 1) * cosW - sqrtA2a);
+  const a0 = (A + 1) - (A - 1) * cosW + sqrtA2a;
+  const a1 = 2 * ((A - 1) - (A + 1) * cosW);
+  const a2 = (A + 1) - (A - 1) * cosW - sqrtA2a;
+  return [b0/a0, b1/a0, b2/a0, a1/a0, a2/a0];
+}
+function highPassBiquad(f0, Q, sr) {
+  const w0 = 2 * Math.PI * f0 / sr;
+  const cosW = Math.cos(w0);
+  const sinW = Math.sin(w0);
+  const alpha = sinW / (2 * Q);
+  const b0 = (1 + cosW) / 2;
+  const b1 = -(1 + cosW);
+  const b2 = (1 + cosW) / 2;
+  const a0 = 1 + alpha;
+  const a1 = -2 * cosW;
+  const a2 = 1 - alpha;
+  return [b0/a0, b1/a0, b2/a0, a1/a0, a2/a0];
+}
+function applyBiquad(data, c) {
+  const [b0, b1, b2, a1, a2] = c;
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < data.length; i++) {
+    const x0 = data[i];
+    const y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+    x2 = x1; x1 = x0; y2 = y1; y1 = y0;
+    data[i] = y0;
+  }
+}
+
+function analyze(audio) {
+  const sr = audio.sampleRate;
+  const nCh = audio.numberOfChannels;
+  const len = audio.length;
+  const weights = channelWeights(nCh);
+  const coeffs = kWeightingCoeffs(sr);
+
+  const kChannels = [];
+  const rawChannels = [];
+  for (let ch = 0; ch < nCh; ch++) {
+    const orig = audio.getChannelData(ch);
+    rawChannels.push(orig);
+    const copy = new Float32Array(orig);
+    applyBiquad(copy, coeffs.pre);
+    applyBiquad(copy, coeffs.rlb);
+    kChannels.push(copy);
+  }
+
+  const blockSize = Math.round(0.4 * sr);
+  const stepSize = Math.round(0.1 * sr);
+  const nBlocks = Math.max(0, Math.floor((len - blockSize) / stepSize) + 1);
+  const blockLoudness = new Float64Array(nBlocks);
+
+  for (let bi = 0; bi < nBlocks; bi++) {
+    const start = bi * stepSize;
+    let sumWeighted = 0;
+    for (let ch = 0; ch < nCh; ch++) {
+      if (weights[ch] === 0) continue;
+      const data = kChannels[ch];
+      let ms = 0;
+      for (let i = 0; i < blockSize; i++) {
+        const v = data[start + i];
+        ms += v * v;
+      }
+      ms /= blockSize;
+      sumWeighted += weights[ch] * ms;
+    }
+    blockLoudness[bi] = -0.691 + 10 * Math.log10(sumWeighted || 1e-20);
+  }
+
+  const ABS_GATE = -70;
+  const absPassed = [];
+  for (let bi = 0; bi < nBlocks; bi++) {
+    if (blockLoudness[bi] > ABS_GATE) absPassed.push(bi);
+  }
+  function meanEnergy(indices) {
+    if (!indices.length) return null;
+    let sumE = 0;
+    for (const i of indices) sumE += Math.pow(10, (blockLoudness[i] + 0.691) / 10);
+    return sumE / indices.length;
+  }
+  const meanAbs = meanEnergy(absPassed);
+  let integrated = -Infinity;
+  if (meanAbs !== null) {
+    const ungated = -0.691 + 10 * Math.log10(meanAbs);
+    const relGate = ungated - 10;
+    const relPassed = absPassed.filter(i => blockLoudness[i] > relGate);
+    const meanRel = meanEnergy(relPassed);
+    if (meanRel !== null) integrated = -0.691 + 10 * Math.log10(meanRel);
+  }
+
+  const lraBlockSize = Math.round(3.0 * sr);
+  const lraStepSize = Math.round(1.0 * sr);
+  const nLra = Math.max(0, Math.floor((len - lraBlockSize) / lraStepSize) + 1);
+  const lraBlocks = [];
+  for (let bi = 0; bi < nLra; bi++) {
+    const start = bi * lraStepSize;
+    let sumWeighted = 0;
+    for (let ch = 0; ch < nCh; ch++) {
+      if (weights[ch] === 0) continue;
+      const data = kChannels[ch];
+      let ms = 0;
+      for (let i = 0; i < lraBlockSize; i++) {
+        const v = data[start + i];
+        ms += v * v;
+      }
+      ms /= lraBlockSize;
+      sumWeighted += weights[ch] * ms;
+    }
+    lraBlocks.push(-0.691 + 10 * Math.log10(sumWeighted || 1e-20));
+  }
+  let lra = 0;
+  let shortTermHi = NaN;
+  let shortTermLo = NaN;
+  const lraAbs = lraBlocks.filter(L => L > -70);
+  if (lraAbs.length) {
+    let sumE = 0;
+    for (const L of lraAbs) sumE += Math.pow(10, (L + 0.691) / 10);
+    const meanE = sumE / lraAbs.length;
+    const ungated = -0.691 + 10 * Math.log10(meanE);
+    const relGate = ungated - 20;
+    const passed = lraAbs.filter(L => L > relGate).sort((a, b) => a - b);
+    if (passed.length >= 2) {
+      const lo = passed[Math.floor(passed.length * 0.10)];
+      const hi = passed[Math.floor(passed.length * 0.95)];
+      lra = hi - lo;
+    }
+    // Short-term range: use the same absolute-gated (>-70 LUFS) window pool.
+    // 5th/95th percentile bounds trim outliers (e.g. single-window spikes,
+    // fade-out tails) while representing the true loudest and quietest sections.
+    const sorted = lraAbs.slice().sort((a, b) => a - b);
+    if (sorted.length >= 2) {
+      shortTermLo = sorted[Math.floor(sorted.length * 0.05)];
+      shortTermHi = sorted[Math.floor(sorted.length * 0.95)];
+    }
+  }
+
+  // ---- PSR (Peak to Short-term Loudness Ratio) ----
+  // For each 3-second short-term window, compute peak-dBFS minus short-term LUFS.
+  // Take the 10th percentile across windows as the file's representative PSR —
+  // this reflects the loudest/densest passages (where PSR drops lowest), which
+  // is what determines dynamic character. A track with one quiet intro (high PSR)
+  // but a crushed chorus should be characterized by the crushed chorus.
+  // We use sample-peak (not oversampled true-peak) per window for speed; the
+  // resulting PSR is within ~1 dB of a true-peak-based PSR, which is well within
+  // the label binning tolerance.
+  const psrValues = [];
+  for (let bi = 0; bi < nLra; bi++) {
+    const start = bi * lraStepSize;
+    const stLoudness = lraBlocks[bi];
+    if (stLoudness <= -70) continue; // skip silent windows
+    // Peak across all channels in this window
+    let winPeak = 0;
+    for (let ch = 0; ch < nCh; ch++) {
+      if (weights[ch] === 0) continue;
+      const d = rawChannels[ch];
+      for (let i = 0; i < lraBlockSize; i++) {
+        const a = Math.abs(d[start + i]);
+        if (a > winPeak) winPeak = a;
+      }
+    }
+    if (winPeak <= 0) continue;
+    const peakDbWin = 20 * Math.log10(winPeak);
+    psrValues.push(peakDbWin - stLoudness);
+  }
+  let psr = NaN;
+  if (psrValues.length) {
+    psrValues.sort((a, b) => a - b);
+    psr = psrValues[Math.floor(psrValues.length * 0.10)];
+  }
+
+  let peakLin = 0;
+  let sumSq = 0;
+  let totalSamples = 0;
+  for (let ch = 0; ch < nCh; ch++) {
+    const d = rawChannels[ch];
+    for (let i = 0; i < d.length; i++) {
+      const a = Math.abs(d[i]);
+      if (a > peakLin) peakLin = a;
+      sumSq += d[i] * d[i];
+      totalSamples++;
+    }
+  }
+  const peakDb = peakLin > 0 ? 20 * Math.log10(peakLin) : -Infinity;
+  const rmsLin = Math.sqrt(sumSq / totalSamples);
+  const rmsDb = rmsLin > 0 ? 20 * Math.log10(rmsLin) : -Infinity;
+  const truePeak = estimateTruePeak(rawChannels);
+
+  return { integrated, lra, peakDb, rmsDb, truePeak, crest: peakDb - rmsDb, psr, shortTermLo, shortTermHi };
+}
+
+function channelWeights(nCh) {
+  if (nCh === 1) return [1];
+  if (nCh === 2) return [1, 1];
+  if (nCh === 6) return [1, 1, 1, 0, 1.41, 1.41];
+  return Array(nCh).fill(1);
+}
+
+function estimateTruePeak(channels) {
+  const OVERSAMPLE = 4;
+  const KERNEL_HALF = 8;
+  const kernels = [];
+  for (let p = 0; p < OVERSAMPLE; p++) {
+    const frac = p / OVERSAMPLE;
+    const k = new Float32Array(2 * KERNEL_HALF);
+    let sum = 0;
+    for (let i = 0; i < 2 * KERNEL_HALF; i++) {
+      const n = i - KERNEL_HALF + 1 - frac;
+      let v;
+      if (Math.abs(n) < 1e-9) v = 1;
+      else v = Math.sin(Math.PI * n) / (Math.PI * n);
+      const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * (i + 0.5) / (2 * KERNEL_HALF));
+      k[i] = v * w;
+      sum += k[i];
+    }
+    if (sum !== 0) for (let i = 0; i < k.length; i++) k[i] /= sum;
+    kernels.push(k);
+  }
+  let peak = 0;
+  for (const d of channels) {
+    const N = d.length;
+    for (let i = KERNEL_HALF; i < N - KERNEL_HALF - 1; i++) {
+      const a = Math.abs(d[i]);
+      if (a > peak) peak = a;
+      for (let p = 1; p < OVERSAMPLE; p++) {
+        const k = kernels[p];
+        let s = 0;
+        for (let j = 0; j < 2 * KERNEL_HALF; j++) {
+          s += d[i - KERNEL_HALF + 1 + j] * k[j];
+        }
+        const sa = Math.abs(s);
+        if (sa > peak) peak = sa;
+      }
+    }
+  }
+  return peak > 0 ? 20 * Math.log10(peak) : -Infinity;
+}
+
+
+const TARGETS = [
+  { name: 'Spotify',           value: -14 },
+  { name: 'Apple Music',       value: -16 },
+  { name: 'YouTube',           value: -14 },
+  { name: 'Amazon Music',      value: -14 },
+  { name: 'Tidal',             value: -14 },
+  { name: 'EBU R128 (TV)',     value: -23 },
+  { name: 'ATSC A/85 (US TV)', value: -24 },
+  { name: 'Netflix',           value: -27 },
+];
+
+function fmt(n, d = 1, unit = '') {
+  if (!isFinite(n)) return '−∞' + (unit ? ' ' + unit : '');
+  return n.toFixed(d) + (unit ? ' ' + unit : '');
+}
+function fmtSigned(n, d = 1) {
+  if (!isFinite(n)) return '—';
+  const s = n.toFixed(d);
+  return n > 0 ? '+' + s : s;
+}
+function formatDuration(sec) {
+  const m = Math.floor(sec / 60);
+  const s = (sec - m * 60);
+  return m + ':' + s.toFixed(1).padStart(4, '0');
+}
+
+// PSR-to-label mapping derived from ADPTR MetricAB's preset thresholds
+// (Crushed 3dB, Squashed 5dB, Loud 7dB, Competitive 9dB, Dynamic 12dB, High Dynamic 15dB),
+// collapsed to a 5-label scale where PSR < 7 is a single "Crushed" bucket.
+function psrLabel(psr) {
+  if (!isFinite(psr)) return '—';
+  if (psr >= 15) return 'High Dynamic';
+  if (psr >= 12) return 'Dynamic';
+  if (psr >= 9)  return 'Competitive';
+  if (psr >= 7)  return 'Loud';
+  return 'Crushed';
+}
+
+// LUFS-to-master-condition mapping. Consequence-based labels that describe
+// what state the master is in — what experienced ears would say about its
+// current condition.
+function loudnessLabel(lufs) {
+  if (!isFinite(lufs)) return '—';
+  if (lufs > -5)  return 'Amateur Hour';
+  if (lufs > -6)  return 'Overcooked';
+  if (lufs > -9)  return 'Ready to Ship';
+  if (lufs > -12) return 'Undercooked';
+  return 'Demo Territory';
+}
+
+// Short-term LUFS range: display loudest section → quietest section.
+// Producers read this as "my chorus hits X, my verse sits Y."
+function formatShortTermRange(hi, lo) {
+  if (!isFinite(hi) || !isFinite(lo)) return '—';
+  return hi.toFixed(1) + ' → ' + lo.toFixed(1) + ' LUFS';
+}
+
+function renderResults(fname, audio, s) {
+  document.getElementById('fname').textContent = fname;
+  document.getElementById('fmeta').textContent =
+    audio.sampleRate + ' Hz · ' +
+    audio.numberOfChannels + ' ch · ' +
+    formatDuration(audio.duration);
+
+  const intTxt = isFinite(s.integrated) ? s.integrated.toFixed(1) : '−∞';
+  document.getElementById('lufsI').innerHTML =
+    intTxt + '<span class="headline-unit">LUFS</span>';
+  document.getElementById('loudLabel').textContent = loudnessLabel(s.integrated);
+  document.getElementById('dynLabel').textContent = psrLabel(s.psr);
+  document.getElementById('dynPsr').textContent = isFinite(s.psr) ? s.psr.toFixed(1) : '';
+  document.getElementById('lra').textContent = fmt(s.lra, 1, 'LU');
+  document.getElementById('stRange').textContent = formatShortTermRange(s.shortTermHi, s.shortTermLo);
+  document.getElementById('truepeak').textContent = fmt(s.truePeak, 1, 'dBTP');
+  document.getElementById('peak').textContent = fmt(s.peakDb, 1, 'dBFS');
+  document.getElementById('rms').textContent = fmt(s.rmsDb, 1, 'dBFS');
+  document.getElementById('crest').textContent = fmt(s.crest, 1, 'dB');
+
+  const tl = document.getElementById('targetList');
+  tl.innerHTML = '';
+  TARGETS.forEach(t => {
+    const delta = isFinite(s.integrated) ? (s.integrated - t.value) : NaN;
+    const row = document.createElement('div');
+    row.className = 'target';
+    const abs = Math.min(Math.abs(delta), 15);
+    const pct = (abs / 15) * 50;
+    const over = delta > 0;
+    const fillStyle = over
+      ? `left: 50%; width: ${pct}%;`
+      : `right: 50%; width: ${pct}%;`;
+    const fillClass = over ? 'bar-fill warn' : 'bar-fill';
+    const deltaClass = !isFinite(delta) ? '' : (Math.abs(delta) < 1 ? 'ok' : (over ? 'warn' : ''));
+
+    row.innerHTML = `
+      <div class="target-name">
+        <span>${t.name}</span>
+        <span class="target-target">${t.value}</span>
+      </div>
+      <div class="bar">
+        <div class="bar-center"></div>
+        ${isFinite(delta) ? `<div class="${fillClass}" style="${fillStyle}"></div>` : ''}
+      </div>
+      <div class="target-delta ${deltaClass}">
+        ${isFinite(delta) ? fmtSigned(delta) + ' LU' : '—'}
+      </div>
+    `;
+    tl.appendChild(row);
+  });
+
+  results.classList.add('show');
+}
+</script>
+</body>
+</html>
