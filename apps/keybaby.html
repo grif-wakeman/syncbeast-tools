@@ -1,614 +1,733 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>KEYbaby</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --warn: #9a3520;
-    --ok: #2a6f4a;
-    --accent: #2a6f4a;
-    --tooltip-bg: #222;
-    --tooltip-ink: #f5f3ef;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --warn: #e5634a;
-    --ok: #8ace00;
-    --accent: #8ace00;
-    --tooltip-bg: #e8e8e8;
-    --tooltip-ink: #121212;
-  }
-  html { background: var(--bg); min-height: 100%; }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    overscroll-behavior: none;
-  }
-  body { padding: 1.5rem 1.25rem 3rem; }
-  .wrap { max-width: 780px; margin: 0 auto; }
-
-  /* Header — matches LUFSbaby exactly */
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line);
-    gap: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  h1 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  .tag { font-size: 0.7rem; color: var(--dim); }
-  .theme-toggle {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.15s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
-
-  /* Keyboard panel — inherits LUFSbaby drop-zone aesthetic for the keys */
-  .keyboard-panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 1rem;
-  }
-  .keyboard {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-  }
-  .key-row { display: grid; gap: 6px; }
-  /* One octave: 7 white keys (C D E F G A B). Black row uses 14 sub-cols
-     so black keys (2-sub-col span) center exactly on white-key boundaries. */
-  .row-white { grid-template-columns: repeat(7, 1fr); }
-  .row-black { grid-template-columns: repeat(14, 1fr); }
-
-  .key {
-    border: 1px dashed var(--dimmer);
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 0.55rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.06s, color 0.06s, border-color 0.06s;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: none;
-    background: var(--panel);
-  }
-  .key.white { color: var(--ink); }
-  .key.black {
-    color: var(--dim);
-    background: var(--panel-2);
-  }
-  .key:hover { border-color: var(--ink); }
-  .key.active {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-    border-style: solid;
-  }
-  html[data-theme="dark"] .key.active { color: var(--bg); }
-
-  .note-name {
-    font-size: 0.95rem;
-    font-weight: 500;
-    line-height: 1;
-    pointer-events: none;
-  }
-  .key.black .note-name { font-size: 0.8rem; }
-
-  /* Note readout — lives in the header where the suite signature usually sits.
-     Tabular numerals so width stays steady (C vs G# don't shift the layout). */
-  .readout {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.02em;
-    color: var(--dimmer);
-    font-variant-numeric: tabular-nums;
-    min-width: 2.2rem;
-    text-align: right;
-    transition: color 0.06s;
-  }
-  .readout.active { color: var(--accent); }
-
-  @media (max-width: 500px) {
-    .keyboard-panel { padding: 0.75rem; }
-    .keyboard { gap: 4px; }
-    .key-row { gap: 4px; }
-    .key { padding-bottom: 0.4rem; }
-    .note-name { font-size: 0.8rem; }
-    .key.black .note-name { font-size: 0.7rem; }
-  }
-
-  /* Footer — matches LUFSbaby */
-  footer {
-    margin-top: 1.5rem;
-    font-size: 0.65rem;
-    color: var(--dim);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--dim);
-    cursor: help;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .info.info-footer-word {
-    width: auto;
-    height: auto;
-    border: none;
-    border-radius: 0;
-    font-family: inherit;
-    font-style: normal;
-    font-size: inherit;
-    font-weight: 400;
-    color: var(--dim);
-    padding: 0;
-    background: none;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border-bottom: 1px dotted var(--dimmer);
-  }
-  .info.info-footer-word:hover,
-  .info.info-footer-word.open {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-  .info-panel {
-    position: absolute;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-ink);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.7rem;
-    font-weight: 400;
-    line-height: 1.5;
-    z-index: 10;
-    display: none;
-    text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  }
-  @media (hover: hover) {
-    .info:hover .info-panel { display: block; }
-  }
-  .info.open .info-panel { display: block; }
-  .info-panel-footer {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 8px);
-    top: auto;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-  }
-  .privacy-head {
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-  }
-  .info-panel-footer p {
-    font-size: 0.7rem;
-    margin-bottom: 0.4rem;
-    line-height: 1.5;
-  }
-  .info-panel-footer p:last-child { margin-bottom: 0; }
-  @media (max-width: 500px) {
-    .info-panel-footer {
-      position: fixed;
-      left: 1rem;
-      right: 1rem;
-      bottom: 1rem;
-      top: auto;
-      transform: none;
-      width: auto;
-      max-width: none;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>KEYbaby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --warn: #9a3520;
+      --ok: #2a6f4a;
+      --accent: #2a6f4a;
+      --tooltip-bg: #222;
+      --tooltip-ink: #f5f3ef;
     }
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header>
-    <h1>KEYbaby</h1>
-    <div class="header-right">
-      <div class="readout" id="readout">—</div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
-    </div>
-  </header>
 
-  <div class="keyboard-panel">
-    <div class="keyboard" id="keyboard"></div>
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --warn: #e5634a;
+      --ok: #8ace00;
+      --accent: #8ace00;
+      --tooltip-bg: #e8e8e8;
+      --tooltip-ink: #121212;
+    }
+
+    html {
+      background: var(--bg);
+      min-height: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overscroll-behavior: none;
+    }
+
+    body {
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* Header — matches LUFSbaby exactly */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      gap: 1rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .theme-toggle {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.15s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    /* Keyboard panel — inherits LUFSbaby drop-zone aesthetic for the keys */
+    .keyboard-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 1rem;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .key-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    /* One octave: 7 white keys (C D E F G A B). Black row uses 14 sub-cols
+     so black keys (2-sub-col span) center exactly on white-key boundaries. */
+    .row-white {
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .row-black {
+      grid-template-columns: repeat(14, 1fr);
+    }
+
+    .key {
+      border: 1px dashed var(--dimmer);
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 0.55rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.06s, color 0.06s, border-color 0.06s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+      background: var(--panel);
+    }
+
+    .key.white {
+      color: var(--ink);
+    }
+
+    .key.black {
+      color: var(--dim);
+      background: var(--panel-2);
+    }
+
+    .key:hover {
+      border-color: var(--ink);
+    }
+
+    .key.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      border-style: solid;
+    }
+
+    html[data-theme="dark"] .key.active {
+      color: var(--bg);
+    }
+
+    .note-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .key.black .note-name {
+      font-size: 0.8rem;
+    }
+
+    /* Note readout — lives in the header where the suite signature usually sits.
+     Tabular numerals so width stays steady (C vs G# don't shift the layout). */
+    .readout {
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: var(--dimmer);
+      font-variant-numeric: tabular-nums;
+      min-width: 2.2rem;
+      text-align: right;
+      transition: color 0.06s;
+    }
+
+    .readout.active {
+      color: var(--accent);
+    }
+
+    @media (max-width: 500px) {
+      .keyboard-panel {
+        padding: 0.75rem;
+      }
+
+      .keyboard {
+        gap: 4px;
+      }
+
+      .key-row {
+        gap: 4px;
+      }
+
+      .key {
+        padding-bottom: 0.4rem;
+      }
+
+      .note-name {
+        font-size: 0.8rem;
+      }
+
+      .key.black .note-name {
+        font-size: 0.7rem;
+      }
+    }
+
+    /* Footer — matches LUFSbaby */
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--dim);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--dim);
+      cursor: help;
+      position: relative;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .info.info-footer-word {
+      width: auto;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      font-family: inherit;
+      font-style: normal;
+      font-size: inherit;
+      font-weight: 400;
+      color: var(--dim);
+      padding: 0;
+      background: none;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      border-bottom: 1px dotted var(--dimmer);
+    }
+
+    .info.info-footer-word:hover,
+    .info.info-footer-word.open {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    .info-panel {
+      position: absolute;
+      background: var(--tooltip-bg);
+      color: var(--tooltip-ink);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      line-height: 1.5;
+      z-index: 10;
+      display: none;
+      text-align: left;
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+
+    @media (hover: hover) {
+      .info:hover .info-panel {
+        display: block;
+      }
+    }
+
+    .info.open .info-panel {
+      display: block;
+    }
+
+    .info-panel-footer {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 300px;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .privacy-head {
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    .info-panel-footer p {
+      font-size: 0.7rem;
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .info-panel-footer p:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 500px) {
+      .info-panel-footer {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        top: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>KEYbaby</h1>
+      <div class="header-right">
+        <div class="readout" id="readout">—</div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span
+            class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+      </div>
+    </header>
+
+    <div class="keyboard-panel">
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <footer>
+      <span>© Sync Beast LLC ·</span>
+      <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy"
+        aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+          <div class="privacy-head">Nothing leaves your device.</div>
+          <p>KEYbaby generates tones locally in your browser. No audio is uploaded, recorded, or transmitted. No
+            analytics, no tracking, no servers.</p>
+        </span></button>
+    </footer>
   </div>
 
-  <footer>
-    <span>© Sync Beast LLC ·</span>
-    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
-      <div class="privacy-head">Nothing leaves your device.</div>
-      <p>KEYbaby generates tones locally in your browser. No audio is uploaded, recorded, or transmitted. No analytics, no tracking, no servers.</p>
-    </span></button>
-  </footer>
-</div>
+  <script>
+    // ============================================================
+    // Theme toggle (mirrors LUFSbaby)
+    // ============================================================
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('keybaby-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
 
-<script>
-// ============================================================
-// Theme toggle (mirrors LUFSbaby)
-// ============================================================
-(function initTheme() {
-  const saved = (() => {
-    try { return localStorage.getItem('keybaby-theme'); } catch (e) { return null; }
-  })();
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggle');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const cur = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('keybaby-theme', next); } catch (e) { }
+        });
+      }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') || 'light';
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try { localStorage.setItem('keybaby-theme', next); } catch (e) {}
+      // Privacy tooltip — same click/outside/escape behavior as LUFSbaby
+      const infos = document.querySelectorAll('.info');
+      const closeAll = () => {
+        infos.forEach(el => {
+          el.classList.remove('open');
+          el.setAttribute('aria-expanded', 'false');
+        });
+      };
+      infos.forEach(info => {
+        info.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = info.classList.contains('open');
+          closeAll();
+          if (!wasOpen) {
+            info.classList.add('open');
+            info.setAttribute('aria-expanded', 'true');
+          }
+        });
+        const panel = info.querySelector('.info-panel');
+        if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
     });
-  }
 
-  // Privacy tooltip — same click/outside/escape behavior as LUFSbaby
-  const infos = document.querySelectorAll('.info');
-  const closeAll = () => {
-    infos.forEach(el => {
-      el.classList.remove('open');
-      el.setAttribute('aria-expanded', 'false');
+    // ============================================================
+    // Audio engine
+    // ============================================================
+    let audioCtx = null;
+    const activeVoices = new Map();
+
+    function getCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function midiToFreq(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function noteOn(noteId, midi) {
+      if (activeVoices.has(noteId)) return;
+      const ctx = getCtx();
+      const now = ctx.currentTime;
+      const freq = midiToFreq(midi);
+
+      // Sine fundamental + quiet triangle harmonic an octave up.
+      // Pure sine alone gets lost on iPhone speakers; the harmonic adds enough
+      // body to be clearly audible without sounding like a buzzer.
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.value = freq;
+
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.value = freq * 2;
+
+      const mix2 = ctx.createGain();
+      mix2.gain.value = 0.08;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.35, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.4);
+
+      osc1.connect(gain);
+      osc2.connect(mix2).connect(gain);
+      gain.connect(ctx.destination);
+
+      osc1.start(now);
+      osc2.start(now);
+
+      activeVoices.set(noteId, { osc1, osc2, gain });
+    }
+
+    function noteOff(noteId) {
+      const voice = activeVoices.get(noteId);
+      if (!voice) return;
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+      voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      voice.osc1.stop(now + 0.2);
+      voice.osc2.stop(now + 0.2);
+      activeVoices.delete(noteId);
+    }
+
+    // ============================================================
+    // Keyboard rendering — one octave, C4 to C5
+    // ============================================================
+    const WHITE_NOTES = [
+      { name: 'C', semi: 0, octave: 4 },
+      { name: 'D', semi: 2, octave: 4 },
+      { name: 'E', semi: 4, octave: 4 },
+      { name: 'F', semi: 5, octave: 4 },
+      { name: 'G', semi: 7, octave: 4 },
+      { name: 'A', semi: 9, octave: 4 },
+      { name: 'B', semi: 11, octave: 4 },
+    ];
+
+    const SHARPS = [
+      { name: 'C#', semi: 1, octave: 4, boundary: 1 },
+      { name: 'D#', semi: 3, octave: 4, boundary: 2 },
+      { name: 'F#', semi: 6, octave: 4, boundary: 4 },
+      { name: 'G#', semi: 8, octave: 4, boundary: 5 },
+      { name: 'A#', semi: 10, octave: 4, boundary: 6 },
+    ];
+
+    function midiFor(semi, octave) {
+      return (octave + 1) * 12 + semi;
+    }
+
+    function renderKeyboard() {
+      const kb = document.getElementById('keyboard');
+      kb.innerHTML = '';
+
+      // Black row
+      const blackRow = document.createElement('div');
+      blackRow.className = 'key-row row-black';
+      SHARPS.forEach(s => {
+        const startCol = 2 * s.boundary;
+        const midi = midiFor(s.semi, s.octave);
+        const k = document.createElement('div');
+        k.className = 'key black';
+        k.dataset.midi = midi;
+        k.dataset.note = s.name + s.octave;
+        k.style.gridColumn = `${startCol} / span 2`;
+        k.innerHTML = `<span class="note-name">${s.name}</span>`;
+        blackRow.appendChild(k);
+      });
+      kb.appendChild(blackRow);
+
+      // White row
+      const whiteRow = document.createElement('div');
+      whiteRow.className = 'key-row row-white';
+      WHITE_NOTES.forEach(w => {
+        const k = document.createElement('div');
+        k.className = 'key white';
+        const midi = midiFor(w.semi, w.octave);
+        k.dataset.midi = midi;
+        k.dataset.note = w.name + w.octave;
+        k.innerHTML = `<span class="note-name">${w.name}</span>`;
+        whiteRow.appendChild(k);
+      });
+      kb.appendChild(whiteRow);
+    }
+
+    // ============================================================
+    // Pointer tracking — drag across the keyboard to glide.
+    // We hit-test at the container level so dragging from one key to another
+    // retriggers cleanly, regardless of which row each key is in.
+    // Black keys are visually above white keys in the DOM but `elementFromPoint`
+    // returns whichever the finger is actually over, so sharps still get
+    // priority where they overlap visually.
+    // ============================================================
+
+    // Find the key element under a given page coordinate, if any.
+    function keyAtPoint(x, y) {
+      const el = document.elementFromPoint(x, y);
+      if (!el) return null;
+      // Walk up in case we hit the inner .note-name span
+      return el.closest('.key');
+    }
+
+    // Set the active key, retriggering audio if it's a different key than the
+    // currently-active one for this pointer. `pointerId` lets multi-touch coexist
+    // (each finger has its own active key).
+    function setActive(pointerState, keyEl) {
+      const prev = pointerState.key;
+      if (prev === keyEl) return; // no change
+      if (prev) {
+        prev.classList.remove('active');
+        noteOff(pointerState.id + ':' + prev.dataset.midi);
+      }
+      pointerState.key = keyEl;
+      if (keyEl) {
+        keyEl.classList.add('active');
+        const midi = parseInt(keyEl.dataset.midi, 10);
+        noteOn(pointerState.id + ':' + midi, midi);
+      }
+      updateReadout();
+    }
+
+    // Readout: show the most recently-touched key's note name, or a dash if
+    // nothing is active. With multi-touch we display whichever key was most
+    // recently pressed. The note is shown without octave (just C, F#, etc.).
+    function updateReadout() {
+      const el = document.getElementById('readout');
+      // Find any currently-active key in the DOM (works for any pointer type)
+      const active = document.querySelector('.key.active');
+      if (active) {
+        // dataset.note looks like "C4" or "F#4" — strip the trailing digit
+        const note = active.dataset.note.replace(/\d+$/, '');
+        el.textContent = note;
+        el.classList.add('active');
+      } else {
+        el.textContent = '—';
+        el.classList.remove('active');
+      }
+    }
+
+    function clearPointer(pointerState) {
+      if (pointerState.key) {
+        pointerState.key.classList.remove('active');
+        noteOff(pointerState.id + ':' + pointerState.key.dataset.midi);
+        pointerState.key = null;
+      }
+      updateReadout();
+    }
+
+    // ----- Touch (multi-touch capable) -----
+    const touchStates = new Map(); // touch.identifier -> { id, key }
+    const kb = document.getElementById('keyboard');
+
+    kb.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for (const t of e.changedTouches) {
+        const state = { id: 't' + t.identifier, key: null };
+        touchStates.set(t.identifier, state);
+        const k = keyAtPoint(t.clientX, t.clientY);
+        if (k && k.classList.contains('key')) setActive(state, k);
+      }
+    }, { passive: false });
+
+    kb.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      for (const t of e.changedTouches) {
+        const state = touchStates.get(t.identifier);
+        if (!state) continue;
+        const k = keyAtPoint(t.clientX, t.clientY);
+        setActive(state, k && k.classList.contains('key') ? k : null);
+      }
+    }, { passive: false });
+
+    function endTouch(e) {
+      e.preventDefault();
+      for (const t of e.changedTouches) {
+        const state = touchStates.get(t.identifier);
+        if (!state) continue;
+        clearPointer(state);
+        touchStates.delete(t.identifier);
+      }
+    }
+    kb.addEventListener('touchend', endTouch, { passive: false });
+    kb.addEventListener('touchcancel', endTouch, { passive: false });
+
+    // ----- Mouse (single pointer, drag while button held) -----
+    const mouseState = { id: 'm', key: null, down: false };
+
+    kb.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      mouseState.down = true;
+      const k = keyAtPoint(e.clientX, e.clientY);
+      if (k && k.classList.contains('key')) setActive(mouseState, k);
     });
-  };
-  infos.forEach(info => {
-    info.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = info.classList.contains('open');
-      closeAll();
-      if (!wasOpen) {
-        info.classList.add('open');
-        info.setAttribute('aria-expanded', 'true');
+
+    document.addEventListener('mousemove', (e) => {
+      if (!mouseState.down) return;
+      const k = keyAtPoint(e.clientX, e.clientY);
+      setActive(mouseState, k && k.classList.contains('key') ? k : null);
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (!mouseState.down) return;
+      mouseState.down = false;
+      clearPointer(mouseState);
+    });
+
+    renderKeyboard();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Release all audio and clear all pointer/visual state
+        activeVoices.forEach((_, id) => noteOff(id));
+        document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
+        touchStates.forEach(s => s.key = null);
+        touchStates.clear();
+        mouseState.key = null;
+        mouseState.down = false;
+        updateReadout();
       }
     });
-    const panel = info.querySelector('.info-panel');
-    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
-  });
-  document.addEventListener('click', closeAll);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-});
-
-// ============================================================
-// Audio engine
-// ============================================================
-let audioCtx = null;
-const activeVoices = new Map();
-
-function getCtx() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
-}
-
-function midiToFreq(midi) {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
-
-function noteOn(noteId, midi) {
-  if (activeVoices.has(noteId)) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const freq = midiToFreq(midi);
-
-  // Sine fundamental + quiet triangle harmonic an octave up.
-  // Pure sine alone gets lost on iPhone speakers; the harmonic adds enough
-  // body to be clearly audible without sounding like a buzzer.
-  const osc1 = ctx.createOscillator();
-  osc1.type = 'sine';
-  osc1.frequency.value = freq;
-
-  const osc2 = ctx.createOscillator();
-  osc2.type = 'triangle';
-  osc2.frequency.value = freq * 2;
-
-  const mix2 = ctx.createGain();
-  mix2.gain.value = 0.08;
-
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.35, now + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.22, now + 0.4);
-
-  osc1.connect(gain);
-  osc2.connect(mix2).connect(gain);
-  gain.connect(ctx.destination);
-
-  osc1.start(now);
-  osc2.start(now);
-
-  activeVoices.set(noteId, { osc1, osc2, gain });
-}
-
-function noteOff(noteId) {
-  const voice = activeVoices.get(noteId);
-  if (!voice) return;
-  const ctx = audioCtx;
-  const now = ctx.currentTime;
-  voice.gain.gain.cancelScheduledValues(now);
-  voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
-  voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-  voice.osc1.stop(now + 0.2);
-  voice.osc2.stop(now + 0.2);
-  activeVoices.delete(noteId);
-}
-
-// ============================================================
-// Keyboard rendering — one octave, C4 to C5
-// ============================================================
-const WHITE_NOTES = [
-  { name: 'C',  semi: 0,  octave: 4 },
-  { name: 'D',  semi: 2,  octave: 4 },
-  { name: 'E',  semi: 4,  octave: 4 },
-  { name: 'F',  semi: 5,  octave: 4 },
-  { name: 'G',  semi: 7,  octave: 4 },
-  { name: 'A',  semi: 9,  octave: 4 },
-  { name: 'B',  semi: 11, octave: 4 },
-];
-
-const SHARPS = [
-  { name: 'C#', semi: 1,  octave: 4, boundary: 1 },
-  { name: 'D#', semi: 3,  octave: 4, boundary: 2 },
-  { name: 'F#', semi: 6,  octave: 4, boundary: 4 },
-  { name: 'G#', semi: 8,  octave: 4, boundary: 5 },
-  { name: 'A#', semi: 10, octave: 4, boundary: 6 },
-];
-
-function midiFor(semi, octave) {
-  return (octave + 1) * 12 + semi;
-}
-
-function renderKeyboard() {
-  const kb = document.getElementById('keyboard');
-  kb.innerHTML = '';
-
-  // Black row
-  const blackRow = document.createElement('div');
-  blackRow.className = 'key-row row-black';
-  SHARPS.forEach(s => {
-    const startCol = 2 * s.boundary;
-    const midi = midiFor(s.semi, s.octave);
-    const k = document.createElement('div');
-    k.className = 'key black';
-    k.dataset.midi = midi;
-    k.dataset.note = s.name + s.octave;
-    k.style.gridColumn = `${startCol} / span 2`;
-    k.innerHTML = `<span class="note-name">${s.name}</span>`;
-    blackRow.appendChild(k);
-  });
-  kb.appendChild(blackRow);
-
-  // White row
-  const whiteRow = document.createElement('div');
-  whiteRow.className = 'key-row row-white';
-  WHITE_NOTES.forEach(w => {
-    const k = document.createElement('div');
-    k.className = 'key white';
-    const midi = midiFor(w.semi, w.octave);
-    k.dataset.midi = midi;
-    k.dataset.note = w.name + w.octave;
-    k.innerHTML = `<span class="note-name">${w.name}</span>`;
-    whiteRow.appendChild(k);
-  });
-  kb.appendChild(whiteRow);
-}
-
-// ============================================================
-// Pointer tracking — drag across the keyboard to glide.
-// We hit-test at the container level so dragging from one key to another
-// retriggers cleanly, regardless of which row each key is in.
-// Black keys are visually above white keys in the DOM but `elementFromPoint`
-// returns whichever the finger is actually over, so sharps still get
-// priority where they overlap visually.
-// ============================================================
-
-// Find the key element under a given page coordinate, if any.
-function keyAtPoint(x, y) {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return null;
-  // Walk up in case we hit the inner .note-name span
-  return el.closest('.key');
-}
-
-// Set the active key, retriggering audio if it's a different key than the
-// currently-active one for this pointer. `pointerId` lets multi-touch coexist
-// (each finger has its own active key).
-function setActive(pointerState, keyEl) {
-  const prev = pointerState.key;
-  if (prev === keyEl) return; // no change
-  if (prev) {
-    prev.classList.remove('active');
-    noteOff(pointerState.id + ':' + prev.dataset.midi);
-  }
-  pointerState.key = keyEl;
-  if (keyEl) {
-    keyEl.classList.add('active');
-    const midi = parseInt(keyEl.dataset.midi, 10);
-    noteOn(pointerState.id + ':' + midi, midi);
-  }
-  updateReadout();
-}
-
-// Readout: show the most recently-touched key's note name, or a dash if
-// nothing is active. With multi-touch we display whichever key was most
-// recently pressed. The note is shown without octave (just C, F#, etc.).
-function updateReadout() {
-  const el = document.getElementById('readout');
-  // Find any currently-active key in the DOM (works for any pointer type)
-  const active = document.querySelector('.key.active');
-  if (active) {
-    // dataset.note looks like "C4" or "F#4" — strip the trailing digit
-    const note = active.dataset.note.replace(/\d+$/, '');
-    el.textContent = note;
-    el.classList.add('active');
-  } else {
-    el.textContent = '—';
-    el.classList.remove('active');
-  }
-}
-
-function clearPointer(pointerState) {
-  if (pointerState.key) {
-    pointerState.key.classList.remove('active');
-    noteOff(pointerState.id + ':' + pointerState.key.dataset.midi);
-    pointerState.key = null;
-  }
-  updateReadout();
-}
-
-// ----- Touch (multi-touch capable) -----
-const touchStates = new Map(); // touch.identifier -> { id, key }
-const kb = document.getElementById('keyboard');
-
-kb.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    const state = { id: 't' + t.identifier, key: null };
-    touchStates.set(t.identifier, state);
-    const k = keyAtPoint(t.clientX, t.clientY);
-    if (k && k.classList.contains('key')) setActive(state, k);
-  }
-}, { passive: false });
-
-kb.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    const state = touchStates.get(t.identifier);
-    if (!state) continue;
-    const k = keyAtPoint(t.clientX, t.clientY);
-    setActive(state, k && k.classList.contains('key') ? k : null);
-  }
-}, { passive: false });
-
-function endTouch(e) {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    const state = touchStates.get(t.identifier);
-    if (!state) continue;
-    clearPointer(state);
-    touchStates.delete(t.identifier);
-  }
-}
-kb.addEventListener('touchend', endTouch, { passive: false });
-kb.addEventListener('touchcancel', endTouch, { passive: false });
-
-// ----- Mouse (single pointer, drag while button held) -----
-const mouseState = { id: 'm', key: null, down: false };
-
-kb.addEventListener('mousedown', (e) => {
-  e.preventDefault();
-  mouseState.down = true;
-  const k = keyAtPoint(e.clientX, e.clientY);
-  if (k && k.classList.contains('key')) setActive(mouseState, k);
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!mouseState.down) return;
-  const k = keyAtPoint(e.clientX, e.clientY);
-  setActive(mouseState, k && k.classList.contains('key') ? k : null);
-});
-
-document.addEventListener('mouseup', (e) => {
-  if (!mouseState.down) return;
-  mouseState.down = false;
-  clearPointer(mouseState);
-});
-
-renderKeyboard();
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    // Release all audio and clear all pointer/visual state
-    activeVoices.forEach((_, id) => noteOff(id));
-    document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
-    touchStates.forEach(s => s.key = null);
-    touchStates.clear();
-    mouseState.key = null;
-    mouseState.down = false;
-    updateReadout();
-  }
-});
-</script>
+  </script>
 </body>
+
 </html>

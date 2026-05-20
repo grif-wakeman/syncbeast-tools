@@ -1,575 +1,758 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>TRIMbaby</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --warn: #9a3520;
-    --ok: #2a6f4a;
-    --accent: #2a6f4a;
-    --tooltip-bg: #222;
-    --tooltip-ink: #f5f3ef;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --warn: #e5634a;
-    --ok: #8ace00;
-    --accent: #8ace00;
-    --tooltip-bg: #e8e8e8;
-    --tooltip-ink: #121212;
-  }
-  html { background: var(--bg); min-height: 100%; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  body { padding: 1.5rem 1.25rem 3rem; }
-  .wrap { max-width: 780px; margin: 0 auto; }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line);
-    gap: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  h1 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  .tag { font-size: 0.7rem; color: var(--dim); }
-  .theme-toggle {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.15s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
-
-  .drop {
-    border: 1px dashed var(--dimmer);
-    background: var(--panel);
-    padding: 2rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    display: block;
-  }
-  .drop:hover, .drop.hover {
-    background: var(--panel-2);
-    border-color: var(--ink);
-  }
-  .drop-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
-  .drop-sub { font-size: 0.7rem; color: var(--dim); }
-  .drop input { display: none; }
-
-  .status {
-    margin-top: 0.75rem;
-    font-size: 0.7rem;
-    color: var(--dim);
-    min-height: 1em;
-  }
-  .status.err { color: var(--warn); }
-
-  .queue { margin-top: 1.25rem; display: none; }
-  .queue.show { display: block; }
-
-  .section {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    margin-bottom: 0.75rem;
-  }
-  .section-head {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--dim);
-    cursor: help;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .info svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  .info svg .info-ring { stroke: currentColor; }
-  .info svg .info-dot,
-  .info svg .info-stem { fill: currentColor; }
-  .info:hover, .info.open { color: var(--ink); }
-  .info-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 320px;
-    max-width: calc(100vw - 2.5rem);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-ink);
-    border: 1px solid var(--tooltip-bg);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.7rem;
-    font-weight: 400;
-    font-style: normal;
-    text-transform: none;
-    letter-spacing: 0;
-    line-height: 1.5;
-    z-index: 10;
-    display: none;
-    text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  }
-  @media (hover: hover) {
-    .info:hover .info-panel { display: block; }
-  }
-  .info.open .info-panel { display: block; }
-  .info-panel p {
-    font-size: 0.7rem;
-    margin-bottom: 0.4rem;
-    line-height: 1.5;
-  }
-  .info-panel p:last-child { margin-bottom: 0; }
-
-  .row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem 0.75rem;
-    align-items: center;
-    padding: 0.55rem 0.75rem;
-    border-bottom: 1px solid var(--line);
-  }
-  .row:last-child { border-bottom: none; }
-  .row-name {
-    font-size: 0.8rem;
-    font-weight: 500;
-    word-break: break-all;
-    min-width: 0;
-  }
-  .row-state {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-  .row-state.ok { color: var(--ok); font-weight: 700; }
-  .row-state.err { color: var(--warn); font-weight: 700; }
-  .row-state.active { color: var(--ink); }
-  .row-bar {
-    grid-column: 1 / -1;
-    position: relative;
-    height: 4px;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    overflow: hidden;
-  }
-  .row-bar-fill {
-    position: absolute;
-    top: 0; bottom: 0; left: 0;
-    width: 0%;
-    background: var(--accent);
-    transition: width 0.15s linear;
-  }
-  .row-bar.done .row-bar-fill { width: 100% !important; }
-  .row-bar.err .row-bar-fill { background: var(--warn); width: 100% !important; }
-
-  /* Trim summary: shows up below the progress bar once done */
-  .row-detail {
-    grid-column: 1 / -1;
-    font-size: 0.65rem;
-    color: var(--dim);
-    margin-top: 0.1rem;
-    display: none;
-  }
-  .row-detail.show { display: block; }
-  .row-detail.warn { color: var(--warn); }
-
-  /* Transcript button — text label, matches row-state typography */
-  .row-right {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-  .transcript-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: inherit;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dimmer);
-    cursor: default;
-    display: none;
-    white-space: nowrap;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .transcript-btn.show { display: inline-block; }
-  .transcript-btn.loading {
-    color: var(--dim);
-    animation: tb-pulse 1.4s ease-in-out infinite;
-  }
-  .transcript-btn.ready {
-    color: var(--ink);
-    cursor: pointer;
-    font-weight: 700;
-  }
-  .transcript-btn.ready:hover { color: var(--accent); }
-  .transcript-btn.copied {
-    color: var(--ok);
-    font-weight: 700;
-    animation: none;
-  }
-  .transcript-btn.err { color: var(--warn); }
-  @keyframes tb-pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
-
-  .summary {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.7rem;
-    color: var(--dim);
-    border-top: 1px solid var(--line);
-    background: var(--panel-2);
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .summary .count-done { color: var(--ink); font-weight: 500; }
-
-  .reset {
-    margin-top: 1rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    color: var(--dim);
-    padding: 0.4rem 0.75rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-  }
-  .reset:hover { color: var(--ink); border-color: var(--ink); }
-  .reset:disabled { opacity: 0.5; cursor: not-allowed; }
-  .reset:disabled:hover { color: var(--dim); border-color: var(--line); }
-
-  footer {
-    margin-top: 1.5rem;
-    font-size: 0.65rem;
-    color: var(--dim);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .info.info-footer-word {
-    width: auto;
-    height: auto;
-    border: none;
-    border-radius: 0;
-    font-family: inherit;
-    font-style: normal;
-    font-size: inherit;
-    font-weight: 400;
-    color: var(--dim);
-    padding: 0;
-    background: none;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border-bottom: 1px dotted var(--dimmer);
-  }
-  .info.info-footer-word:hover,
-  .info.info-footer-word.open {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-  .info-panel-footer {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 8px);
-    top: auto;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-  }
-  .privacy-head {
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-  }
-  @media (max-width: 500px) {
-    .info-panel-footer {
-      position: fixed;
-      left: 1rem;
-      right: 1rem;
-      bottom: 1rem;
-      top: auto;
-      transform: none;
-      width: auto;
-      max-width: none;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>TRIMbaby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --warn: #9a3520;
+      --ok: #2a6f4a;
+      --accent: #2a6f4a;
+      --tooltip-bg: #222;
+      --tooltip-ink: #f5f3ef;
     }
-  }
-</style>
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --warn: #e5634a;
+      --ok: #8ace00;
+      --accent: #8ace00;
+      --tooltip-bg: #e8e8e8;
+      --tooltip-ink: #121212;
+    }
+
+    html {
+      background: var(--bg);
+      min-height: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body {
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      gap: 1rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .theme-toggle {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.15s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    .drop {
+      border: 1px dashed var(--dimmer);
+      background: var(--panel);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      display: block;
+    }
+
+    .drop:hover,
+    .drop.hover {
+      background: var(--panel-2);
+      border-color: var(--ink);
+    }
+
+    .drop-title {
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .drop-sub {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .drop input {
+      display: none;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--dim);
+      min-height: 1em;
+    }
+
+    .status.err {
+      color: var(--warn);
+    }
+
+    .queue {
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .queue.show {
+      display: block;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-head {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      color: var(--dim);
+      cursor: help;
+      position: relative;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .info svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .info svg .info-ring {
+      stroke: currentColor;
+    }
+
+    .info svg .info-dot,
+    .info svg .info-stem {
+      fill: currentColor;
+    }
+
+    .info:hover,
+    .info.open {
+      color: var(--ink);
+    }
+
+    .info-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      max-width: calc(100vw - 2.5rem);
+      background: var(--tooltip-bg);
+      color: var(--tooltip-ink);
+      border: 1px solid var(--tooltip-bg);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.5;
+      z-index: 10;
+      display: none;
+      text-align: left;
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+
+    @media (hover: hover) {
+      .info:hover .info-panel {
+        display: block;
+      }
+    }
+
+    .info.open .info-panel {
+      display: block;
+    }
+
+    .info-panel p {
+      font-size: 0.7rem;
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .info-panel p:last-child {
+      margin-bottom: 0;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      word-break: break-all;
+      min-width: 0;
+    }
+
+    .row-state {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+
+    .row-state.ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .row-state.err {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    .row-state.active {
+      color: var(--ink);
+    }
+
+    .row-bar {
+      grid-column: 1 / -1;
+      position: relative;
+      height: 4px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .row-bar-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.15s linear;
+    }
+
+    .row-bar.done .row-bar-fill {
+      width: 100% !important;
+    }
+
+    .row-bar.err .row-bar-fill {
+      background: var(--warn);
+      width: 100% !important;
+    }
+
+    /* Trim summary: shows up below the progress bar once done */
+    .row-detail {
+      grid-column: 1 / -1;
+      font-size: 0.65rem;
+      color: var(--dim);
+      margin-top: 0.1rem;
+      display: none;
+    }
+
+    .row-detail.show {
+      display: block;
+    }
+
+    .row-detail.warn {
+      color: var(--warn);
+    }
+
+    /* Transcript button — text label, matches row-state typography */
+    .row-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .transcript-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dimmer);
+      cursor: default;
+      display: none;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .transcript-btn.show {
+      display: inline-block;
+    }
+
+    .transcript-btn.loading {
+      color: var(--dim);
+      animation: tb-pulse 1.4s ease-in-out infinite;
+    }
+
+    .transcript-btn.ready {
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .transcript-btn.ready:hover {
+      color: var(--accent);
+    }
+
+    .transcript-btn.copied {
+      color: var(--ok);
+      font-weight: 700;
+      animation: none;
+    }
+
+    .transcript-btn.err {
+      color: var(--warn);
+    }
+
+    @keyframes tb-pulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .summary {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.7rem;
+      color: var(--dim);
+      border-top: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .summary .count-done {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .reset {
+      margin-top: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--dim);
+      padding: 0.4rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+
+    .reset:hover {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .reset:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .reset:disabled:hover {
+      color: var(--dim);
+      border-color: var(--line);
+    }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--dim);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .info.info-footer-word {
+      width: auto;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      font-family: inherit;
+      font-style: normal;
+      font-size: inherit;
+      font-weight: 400;
+      color: var(--dim);
+      padding: 0;
+      background: none;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      border-bottom: 1px dotted var(--dimmer);
+    }
+
+    .info.info-footer-word:hover,
+    .info.info-footer-word.open {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    .info-panel-footer {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 300px;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .privacy-head {
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 500px) {
+      .info-panel-footer {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        top: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-  <header>
-    <h1>TRIMbaby</h1>
-    <div class="header-right">
-      <div class="tag">silence trim · 320 kbps</div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+  <div class="wrap">
+    <header>
+      <h1>TRIMbaby</h1>
+      <div class="header-right">
+        <div class="tag">silence trim · 320 kbps</div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span
+            class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+      </div>
+    </header>
+
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg,.webm,.opus" multiple>
+      <div class="drop-title">Drop voice memos here, or click to select</div>
+      <div class="drop-sub">M4A · WAV · AIFF · FLAC · OGG · MP3 → trimmed 320 kbps MP3</div>
+    </label>
+
+    <div class="status" id="status"></div>
+
+    <div class="queue" id="queue">
+      <div class="section">
+        <div class="section-head">
+          <span>Queue</span>
+          <button class="info" type="button" id="queueInfo" aria-label="About batch downloads"
+            aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5" />
+              <circle class="info-dot" cx="12" cy="7" r="1.5" />
+              <rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5" />
+            </svg><span class="info-panel" role="tooltip">
+              <p>Your browser may ask permission on the first multi-file batch. Allow it so every file downloads.</p>
+            </span></button>
+        </div>
+        <div id="rows"></div>
+        <div class="summary" id="summary">
+          <span><span class="count-done" id="countDone">0</span> <span id="countLabel">of 0 done</span></span>
+          <span id="summaryRight"></span>
+        </div>
+      </div>
+
+      <button class="reset" id="reset">Clear queue</button>
     </div>
-  </header>
 
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg,.webm,.opus" multiple>
-    <div class="drop-title">Drop voice memos here, or click to select</div>
-    <div class="drop-sub">M4A · WAV · AIFF · FLAC · OGG · MP3 → trimmed 320 kbps MP3</div>
-  </label>
-
-  <div class="status" id="status"></div>
-
-  <div class="queue" id="queue">
-    <div class="section">
-      <div class="section-head">
-        <span>Queue</span>
-        <button class="info" type="button" id="queueInfo" aria-label="About batch downloads" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
-          <p>Your browser may ask permission on the first multi-file batch. Allow it so every file downloads.</p>
+    <footer>
+      <span>© Sync Beast LLC ·</span>
+      <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy"
+        aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+          <div class="privacy-head">Your audio stays on your device.</div>
+          <p>TRIMbaby processes and transcribes files entirely inside your browser. Audio is never uploaded, stored,
+            transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab,
+            everything is gone.</p>
+          <p>The transcription model loads once from a public CDN, then is cached in your browser. Your audio is never
+            sent anywhere.</p>
+          <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
         </span></button>
-      </div>
-      <div id="rows"></div>
-      <div class="summary" id="summary">
-        <span><span class="count-done" id="countDone">0</span> <span id="countLabel">of 0 done</span></span>
-        <span id="summaryRight"></span>
-      </div>
-    </div>
-
-    <button class="reset" id="reset">Clear queue</button>
+    </footer>
   </div>
 
-  <footer>
-    <span>© Sync Beast LLC ·</span>
-    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
-      <div class="privacy-head">Your audio stays on your device.</div>
-      <p>TRIMbaby processes and transcribes files entirely inside your browser. Audio is never uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
-      <p>The transcription model loads once from a public CDN, then is cached in your browser. Your audio is never sent anywhere.</p>
-      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
-    </span></button>
-  </footer>
-</div>
+  <!-- lamejs: pure-JS LAME MP3 encoder -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+  <script>
+    // ============================================================
+    // Theme toggle — inherits MP3baby/LUFSbaby's choice if present
+    // so the family feels unified
+    // ============================================================
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('trimbaby-theme'); } catch (e) { return null; }
+      })();
+      const mp3Saved = (() => {
+        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+      })();
+      const lufsSaved = (() => {
+        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || mp3Saved || lufsSaved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
 
-<!-- lamejs: pure-JS LAME MP3 encoder -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-<script>
-// ============================================================
-// Theme toggle — inherits MP3baby/LUFSbaby's choice if present
-// so the family feels unified
-// ============================================================
-(function initTheme() {
-  const saved = (() => {
-    try { return localStorage.getItem('trimbaby-theme'); } catch (e) { return null; }
-  })();
-  const mp3Saved = (() => {
-    try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
-  })();
-  const lufsSaved = (() => {
-    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
-  })();
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || mp3Saved || lufsSaved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
-
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') || 'light';
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try { localStorage.setItem('trimbaby-theme', next); } catch (e) {}
-    });
-  }
-
-  // Info tooltips
-  const infos = document.querySelectorAll('.info');
-  const closeAll = () => {
-    infos.forEach(el => {
-      el.classList.remove('open');
-      el.setAttribute('aria-expanded', 'false');
-    });
-  };
-  infos.forEach(info => {
-    info.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = info.classList.contains('open');
-      closeAll();
-      if (!wasOpen) {
-        info.classList.add('open');
-        info.setAttribute('aria-expanded', 'true');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggle');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const cur = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('trimbaby-theme', next); } catch (e) { }
+        });
       }
+
+      // Info tooltips
+      const infos = document.querySelectorAll('.info');
+      const closeAll = () => {
+        infos.forEach(el => {
+          el.classList.remove('open');
+          el.setAttribute('aria-expanded', 'false');
+        });
+      };
+      infos.forEach(info => {
+        info.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = info.classList.contains('open');
+          closeAll();
+          if (!wasOpen) {
+            info.classList.add('open');
+            info.setAttribute('aria-expanded', 'true');
+          }
+        });
+        const panel = info.querySelector('.info-panel');
+        if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
     });
-    const panel = info.querySelector('.info-panel');
-    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
-  });
-  document.addEventListener('click', closeAll);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-});
 
-// ============================================================
-// Drop zone + file intake
-// ============================================================
-const drop = document.getElementById('drop');
-const fileInput = document.getElementById('file');
-const status = document.getElementById('status');
-const queue = document.getElementById('queue');
-const rowsEl = document.getElementById('rows');
-const countDoneEl = document.getElementById('countDone');
-const countLabelEl = document.getElementById('countLabel');
-const summaryRightEl = document.getElementById('summaryRight');
-const resetBtn = document.getElementById('reset');
+    // ============================================================
+    // Drop zone + file intake
+    // ============================================================
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    const status = document.getElementById('status');
+    const queue = document.getElementById('queue');
+    const rowsEl = document.getElementById('rows');
+    const countDoneEl = document.getElementById('countDone');
+    const countLabelEl = document.getElementById('countLabel');
+    const summaryRightEl = document.getElementById('summaryRight');
+    const resetBtn = document.getElementById('reset');
 
-['dragenter', 'dragover'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.add('hover');
-  });
-});
-['dragleave', 'drop'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.remove('hover');
-  });
-});
-drop.addEventListener('drop', (e) => {
-  const files = Array.from(e.dataTransfer.files || []);
-  if (files.length) addFiles(files);
-});
-fileInput.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files || []);
-  if (files.length) addFiles(files);
-  fileInput.value = '';
-});
-resetBtn.addEventListener('click', () => {
-  if (state.processing) return;
-  state.items = [];
-  rowsEl.innerHTML = '';
-  queue.classList.remove('show');
-  setStatus('');
-  updateSummary();
-});
+    ['dragenter', 'dragover'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.add('hover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.remove('hover');
+      });
+    });
+    drop.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length) addFiles(files);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length) addFiles(files);
+      fileInput.value = '';
+    });
+    resetBtn.addEventListener('click', () => {
+      if (state.processing) return;
+      state.items = [];
+      rowsEl.innerHTML = '';
+      queue.classList.remove('show');
+      setStatus('');
+      updateSummary();
+    });
 
-function setStatus(msg, kind = '') {
-  status.textContent = msg;
-  status.className = 'status' + (kind ? ' ' + kind : '');
-}
+    function setStatus(msg, kind = '') {
+      status.textContent = msg;
+      status.className = 'status' + (kind ? ' ' + kind : '');
+    }
 
-// ============================================================
-// State & queue
-// ============================================================
-const state = {
-  items: [],
-  processing: false,
-};
-let nextId = 0;
+    // ============================================================
+    // State & queue
+    // ============================================================
+    const state = {
+      items: [],
+      processing: false,
+    };
+    let nextId = 0;
 
-function addFiles(files) {
-  const accepted = files.filter(f => isAudioFile(f));
-  const rejected = files.length - accepted.length;
-  if (rejected > 0) {
-    setStatus(rejected + ' file' + (rejected === 1 ? '' : 's') + ' skipped — not audio.', 'err');
-  } else {
-    setStatus('');
-  }
-  for (const f of accepted) enqueue(f);
-  queue.classList.add('show');
-  updateSummary();
-  pump();
-}
+    function addFiles(files) {
+      const accepted = files.filter(f => isAudioFile(f));
+      const rejected = files.length - accepted.length;
+      if (rejected > 0) {
+        setStatus(rejected + ' file' + (rejected === 1 ? '' : 's') + ' skipped — not audio.', 'err');
+      } else {
+        setStatus('');
+      }
+      for (const f of accepted) enqueue(f);
+      queue.classList.add('show');
+      updateSummary();
+      pump();
+    }
 
-function isAudioFile(f) {
-  if (f.type && f.type.startsWith('audio/')) return true;
-  const n = (f.name || '').toLowerCase();
-  return /\.(m4a|mp3|wav|aif|aiff|flac|ogg|oga|opus|webm|mp4|aac)$/.test(n);
-}
+    function isAudioFile(f) {
+      if (f.type && f.type.startsWith('audio/')) return true;
+      const n = (f.name || '').toLowerCase();
+      return /\.(m4a|mp3|wav|aif|aiff|flac|ogg|oga|opus|webm|mp4|aac)$/.test(n);
+    }
 
-function enqueue(file) {
-  const id = ++nextId;
-  const row = document.createElement('div');
-  row.className = 'row';
-  row.innerHTML = `
+    function enqueue(file) {
+      const id = ++nextId;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
     <div class="row-name"></div>
     <div class="row-right">
       <button class="transcript-btn" type="button" aria-label="Transcript"></button>
@@ -578,158 +761,158 @@ function enqueue(file) {
     <div class="row-bar"><div class="row-bar-fill"></div></div>
     <div class="row-detail"></div>
   `;
-  row.querySelector('.row-name').textContent = file.name;
-  rowsEl.appendChild(row);
+      row.querySelector('.row-name').textContent = file.name;
+      rowsEl.appendChild(row);
 
-  state.items.push({
-    id,
-    file,
-    rowEl: row,
-    barEl: row.querySelector('.row-bar'),
-    barFillEl: row.querySelector('.row-bar-fill'),
-    stateEl: row.querySelector('.row-state'),
-    detailEl: row.querySelector('.row-detail'),
-    transcriptBtn: row.querySelector('.transcript-btn'),
-    transcriptIconLoading: row.querySelector('.tb-icon-loading'),
-    transcriptIconReady: row.querySelector('.tb-icon-ready'),
-    status: 'pending',
-    transcript: null,
-    transcriptStatus: 'pending', // pending | loading | ready | err
-    decodedAudio: null, // cached for transcription pass
-  });
-}
-
-function updateSummary() {
-  const total = state.items.length;
-  const done = state.items.filter(i => i.status === 'done').length;
-  const err = state.items.filter(i => i.status === 'err').length;
-  countDoneEl.textContent = done;
-  countLabelEl.textContent = 'of ' + total + ' done';
-  summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
-  resetBtn.disabled = state.processing;
-}
-
-// ============================================================
-// Processing pump — serial, like MP3baby
-// ============================================================
-async function pump() {
-  if (state.processing) return;
-  state.processing = true;
-  updateSummary();
-
-  while (true) {
-    const next = state.items.find(i => i.status === 'pending');
-    if (!next) break;
-    await processItem(next);
-    updateSummary();
-  }
-
-  state.processing = false;
-  updateSummary();
-  setStatus('');
-}
-
-async function processItem(item) {
-  item.status = 'active';
-  item.stateEl.textContent = 'decoding';
-  item.stateEl.className = 'row-state active';
-  item.barFillEl.style.width = '2%';
-  setStatus('Processing ' + item.file.name + '…');
-
-  try {
-    // --- Decode ---
-    const arrayBuffer = await item.file.arrayBuffer();
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) throw new Error('Web Audio not available in this browser.');
-    const audioCtx = new AudioCtx();
-    let audio;
-    try {
-      audio = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-    } catch (err) {
-      audioCtx.close();
-      throw new Error('Could not decode this file.');
+      state.items.push({
+        id,
+        file,
+        rowEl: row,
+        barEl: row.querySelector('.row-bar'),
+        barFillEl: row.querySelector('.row-bar-fill'),
+        stateEl: row.querySelector('.row-state'),
+        detailEl: row.querySelector('.row-detail'),
+        transcriptBtn: row.querySelector('.transcript-btn'),
+        transcriptIconLoading: row.querySelector('.tb-icon-loading'),
+        transcriptIconReady: row.querySelector('.tb-icon-ready'),
+        status: 'pending',
+        transcript: null,
+        transcriptStatus: 'pending', // pending | loading | ready | err
+        decodedAudio: null, // cached for transcription pass
+      });
     }
-    audioCtx.close();
-    item.decodedAudio = audio; // cache for transcription
-    item.barFillEl.style.width = '10%';
 
-    // --- Trim silences ---
-    item.stateEl.textContent = 'analyzing';
-    const trimResult = await trimSilences(audio, (pct) => {
-      // Trim spans 10% -> 35% of the bar
-      item.barFillEl.style.width = (10 + pct * 0.25) + '%';
-    });
-    item.barFillEl.style.width = '35%';
-
-    // --- Encode ---
-    item.stateEl.textContent = 'encoding';
-    const mp3Blob = await encodeMp3(trimResult.audio, trimResult.sampleRate, (pct) => {
-      // Encoding spans 35% -> 95% of the bar
-      item.barFillEl.style.width = (35 + pct * 0.60) + '%';
-    }, item.file.name);
-    item.barFillEl.style.width = '98%';
-
-    // --- Download ---
-    item.stateEl.textContent = 'saving';
-    const outName = trimmedName(item.file.name);
-    triggerDownload(mp3Blob, outName);
-
-    item.status = 'done';
-    item.barEl.classList.add('done');
-    item.stateEl.textContent = 'done';
-    item.stateEl.className = 'row-state ok';
-
-    // Show the trim summary line
-    const before = formatDuration(trimResult.beforeMs / 1000);
-    const after = formatDuration(trimResult.afterMs / 1000);
-    const removedSec = (trimResult.beforeMs - trimResult.afterMs) / 1000;
-    let detail;
-    if (trimResult.lowGap) {
-      detail = `noisy environment · trimmed ${removedSec.toFixed(1)}s · ${before} → ${after}`;
-      item.detailEl.classList.add('warn');
-    } else if (trimResult.cuts === 0) {
-      detail = `nothing to trim · ${before}`;
-    } else {
-      detail = `trimmed ${removedSec.toFixed(1)}s across ${trimResult.cuts} cut${trimResult.cuts === 1 ? '' : 's'} · ${before} → ${after}`;
+    function updateSummary() {
+      const total = state.items.length;
+      const done = state.items.filter(i => i.status === 'done').length;
+      const err = state.items.filter(i => i.status === 'err').length;
+      countDoneEl.textContent = done;
+      countLabelEl.textContent = 'of ' + total + ' done';
+      summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
+      resetBtn.disabled = state.processing;
     }
-    item.detailEl.textContent = detail;
-    item.detailEl.classList.add('show');
 
-    // Kick off transcription in background — does not block next item
-    startTranscription(item);
-  } catch (err) {
-    console.error(err);
-    item.status = 'err';
-    item.barEl.classList.add('err');
-    item.stateEl.textContent = 'error';
-    item.stateEl.className = 'row-state err';
-    item.rowEl.querySelector('.row-name').title = err.message || 'Unknown error';
-  }
-}
+    // ============================================================
+    // Processing pump — serial, like MP3baby
+    // ============================================================
+    async function pump() {
+      if (state.processing) return;
+      state.processing = true;
+      updateSummary();
 
-function trimmedName(name) {
-  const dot = name.lastIndexOf('.');
-  const base = dot > 0 ? name.slice(0, dot) : name;
-  return base + '_trim.mp3';
-}
+      while (true) {
+        const next = state.items.find(i => i.status === 'pending');
+        if (!next) break;
+        await processItem(next);
+        updateSummary();
+      }
 
-// ============================================================
-// Transcription — Whisper-base.en via Transformers.js, in a Worker.
-// Runs after MP3 completes, in parallel with the next file's TRIM pass.
-// Audio never leaves the browser. First load downloads ~140MB of model
-// shards, cached forever after.
-// ============================================================
+      state.processing = false;
+      updateSummary();
+      setStatus('');
+    }
 
-const transcribeQueue = [];
-let transcribeWorker = null;
-let transcribeBusy = false;
-let transcribeModelLoaded = false;
-let transcribeModelLoadStarted = false;
+    async function processItem(item) {
+      item.status = 'active';
+      item.stateEl.textContent = 'decoding';
+      item.stateEl.className = 'row-state active';
+      item.barFillEl.style.width = '2%';
+      setStatus('Processing ' + item.file.name + '…');
 
-function ensureWorker() {
-  if (transcribeWorker) return transcribeWorker;
-  // Worker code as a blob so this stays a single-file app
-  const workerCode = `
+      try {
+        // --- Decode ---
+        const arrayBuffer = await item.file.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) throw new Error('Web Audio not available in this browser.');
+        const audioCtx = new AudioCtx();
+        let audio;
+        try {
+          audio = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        } catch (err) {
+          audioCtx.close();
+          throw new Error('Could not decode this file.');
+        }
+        audioCtx.close();
+        item.decodedAudio = audio; // cache for transcription
+        item.barFillEl.style.width = '10%';
+
+        // --- Trim silences ---
+        item.stateEl.textContent = 'analyzing';
+        const trimResult = await trimSilences(audio, (pct) => {
+          // Trim spans 10% -> 35% of the bar
+          item.barFillEl.style.width = (10 + pct * 0.25) + '%';
+        });
+        item.barFillEl.style.width = '35%';
+
+        // --- Encode ---
+        item.stateEl.textContent = 'encoding';
+        const mp3Blob = await encodeMp3(trimResult.audio, trimResult.sampleRate, (pct) => {
+          // Encoding spans 35% -> 95% of the bar
+          item.barFillEl.style.width = (35 + pct * 0.60) + '%';
+        }, item.file.name);
+        item.barFillEl.style.width = '98%';
+
+        // --- Download ---
+        item.stateEl.textContent = 'saving';
+        const outName = trimmedName(item.file.name);
+        triggerDownload(mp3Blob, outName);
+
+        item.status = 'done';
+        item.barEl.classList.add('done');
+        item.stateEl.textContent = 'done';
+        item.stateEl.className = 'row-state ok';
+
+        // Show the trim summary line
+        const before = formatDuration(trimResult.beforeMs / 1000);
+        const after = formatDuration(trimResult.afterMs / 1000);
+        const removedSec = (trimResult.beforeMs - trimResult.afterMs) / 1000;
+        let detail;
+        if (trimResult.lowGap) {
+          detail = `noisy environment · trimmed ${removedSec.toFixed(1)}s · ${before} → ${after}`;
+          item.detailEl.classList.add('warn');
+        } else if (trimResult.cuts === 0) {
+          detail = `nothing to trim · ${before}`;
+        } else {
+          detail = `trimmed ${removedSec.toFixed(1)}s across ${trimResult.cuts} cut${trimResult.cuts === 1 ? '' : 's'} · ${before} → ${after}`;
+        }
+        item.detailEl.textContent = detail;
+        item.detailEl.classList.add('show');
+
+        // Kick off transcription in background — does not block next item
+        startTranscription(item);
+      } catch (err) {
+        console.error(err);
+        item.status = 'err';
+        item.barEl.classList.add('err');
+        item.stateEl.textContent = 'error';
+        item.stateEl.className = 'row-state err';
+        item.rowEl.querySelector('.row-name').title = err.message || 'Unknown error';
+      }
+    }
+
+    function trimmedName(name) {
+      const dot = name.lastIndexOf('.');
+      const base = dot > 0 ? name.slice(0, dot) : name;
+      return base + '_trim.mp3';
+    }
+
+    // ============================================================
+    // Transcription — Whisper-base.en via Transformers.js, in a Worker.
+    // Runs after MP3 completes, in parallel with the next file's TRIM pass.
+    // Audio never leaves the browser. First load downloads ~140MB of model
+    // shards, cached forever after.
+    // ============================================================
+
+    const transcribeQueue = [];
+    let transcribeWorker = null;
+    let transcribeBusy = false;
+    let transcribeModelLoaded = false;
+    let transcribeModelLoadStarted = false;
+
+    function ensureWorker() {
+      if (transcribeWorker) return transcribeWorker;
+      // Worker code as a blob so this stays a single-file app
+      const workerCode = `
     let pipelinePromise = null;
     let transcriber = null;
 
@@ -786,775 +969,776 @@ function ensureWorker() {
       }
     });
   `;
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  const url = URL.createObjectURL(blob);
-  transcribeWorker = new Worker(url, { type: 'module' });
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      transcribeWorker = new Worker(url, { type: 'module' });
 
-  transcribeWorker.addEventListener('message', (e) => {
-    const msg = e.data;
-    if (msg.type === 'model-progress') {
-      // Soft status update on first load only
-      if (!transcribeModelLoaded) {
-        const p = msg.payload;
-        if (p.status === 'progress' && typeof p.progress === 'number') {
-          setStatus(`Loading transcription model · ${p.progress.toFixed(0)}%`);
-        } else if (p.status === 'initiate' || p.status === 'download') {
-          setStatus('Loading transcription model…');
+      transcribeWorker.addEventListener('message', (e) => {
+        const msg = e.data;
+        if (msg.type === 'model-progress') {
+          // Soft status update on first load only
+          if (!transcribeModelLoaded) {
+            const p = msg.payload;
+            if (p.status === 'progress' && typeof p.progress === 'number') {
+              setStatus(`Loading transcription model · ${p.progress.toFixed(0)}%`);
+            } else if (p.status === 'initiate' || p.status === 'download') {
+              setStatus('Loading transcription model…');
+            }
+          }
+        } else if (msg.type === 'model-ready') {
+          transcribeModelLoaded = true;
+          setStatus('');
+        } else if (msg.type === 'model-err') {
+          // Mark all queued items as transcript-failed; don't kill the rest of the app
+          console.error('Whisper model load failed:', msg.error);
+          transcribeQueue.forEach(it => markTranscriptError(it));
+          transcribeQueue.length = 0;
+          transcribeBusy = false;
+          setStatus('');
+        } else if (msg.type === 'transcribe-start') {
+          console.log(`[transcribe] started id=${msg.id} samples=${msg.samples} sr=${msg.sr}`);
+        } else if (msg.type === 'transcribe-progress') {
+          console.log(`[transcribe] progress id=${msg.id} stage=${msg.stage} durationS=${msg.durationS}`);
+        } else if (msg.type === 'transcribe-done') {
+          const item = state.items.find(i => i.id === msg.id);
+          if (item) {
+            if (item._transcribeTimeout) { clearTimeout(item._transcribeTimeout); item._transcribeTimeout = null; }
+            item.transcript = msg.text || '';
+            item.transcriptStatus = 'ready';
+            updateTranscriptIcon(item);
+          }
+          transcribeBusy = false;
+          pumpTranscribe();
+        } else if (msg.type === 'transcribe-err') {
+          console.error('Transcribe error:', msg.error);
+          const item = state.items.find(i => i.id === msg.id);
+          if (item) {
+            if (item._transcribeTimeout) { clearTimeout(item._transcribeTimeout); item._transcribeTimeout = null; }
+            markTranscriptError(item);
+          }
+          transcribeBusy = false;
+          pumpTranscribe();
         }
+      });
+
+      return transcribeWorker;
+    }
+
+    function markTranscriptError(item) {
+      item.transcriptStatus = 'err';
+      if (item.transcriptBtn) {
+        item.transcriptBtn.classList.remove('loading', 'ready', 'copied');
+        item.transcriptBtn.classList.add('err');
+        item.transcriptBtn.title = 'Transcription failed';
       }
-    } else if (msg.type === 'model-ready') {
-      transcribeModelLoaded = true;
-      setStatus('');
-    } else if (msg.type === 'model-err') {
-      // Mark all queued items as transcript-failed; don't kill the rest of the app
-      console.error('Whisper model load failed:', msg.error);
-      transcribeQueue.forEach(it => markTranscriptError(it));
-      transcribeQueue.length = 0;
-      transcribeBusy = false;
-      setStatus('');
-    } else if (msg.type === 'transcribe-start') {
-      console.log(`[transcribe] started id=${msg.id} samples=${msg.samples} sr=${msg.sr}`);
-    } else if (msg.type === 'transcribe-progress') {
-      console.log(`[transcribe] progress id=${msg.id} stage=${msg.stage} durationS=${msg.durationS}`);
-    } else if (msg.type === 'transcribe-done') {
-      const item = state.items.find(i => i.id === msg.id);
-      if (item) {
-        if (item._transcribeTimeout) { clearTimeout(item._transcribeTimeout); item._transcribeTimeout = null; }
-        item.transcript = msg.text || '';
-        item.transcriptStatus = 'ready';
-        updateTranscriptIcon(item);
+    }
+
+    function updateTranscriptIcon(item) {
+      const btn = item.transcriptBtn;
+      if (!btn) return;
+      btn.classList.remove('loading', 'ready', 'copied', 'err');
+      if (item.transcriptStatus === 'loading') {
+        btn.classList.add('show', 'loading');
+        btn.textContent = 'transcribing…';
+        btn.title = '';
+      } else if (item.transcriptStatus === 'ready') {
+        btn.classList.add('show', 'ready');
+        btn.textContent = 'copy transcript';
+        btn.title = 'Click to copy transcript to clipboard';
+      } else if (item.transcriptStatus === 'err') {
+        btn.classList.add('show', 'err');
+        btn.textContent = 'transcript failed';
+        btn.title = 'Transcription failed — see console';
       }
-      transcribeBusy = false;
+    }
+
+    function startTranscription(item) {
+      ensureWorker();
+      // Kick off model preload on first call (no audio, just warms the pipeline)
+      if (!transcribeModelLoadStarted) {
+        transcribeModelLoadStarted = true;
+        transcribeWorker.postMessage({ type: 'preload' });
+      }
+
+      item.transcriptStatus = 'loading';
+      updateTranscriptIcon(item);
+
+      // Click handler — copies transcript when ready
+      if (!item._transcriptHandlerWired) {
+        item._transcriptHandlerWired = true;
+        item.transcriptBtn.addEventListener('click', async () => {
+          if (item.transcriptStatus !== 'ready' || !item.transcript) return;
+          const restoreText = 'copy transcript';
+          const flashCopied = () => {
+            item.transcriptBtn.classList.add('copied');
+            item.transcriptBtn.textContent = 'copied';
+            setTimeout(() => {
+              item.transcriptBtn.classList.remove('copied');
+              item.transcriptBtn.textContent = restoreText;
+            }, 1100);
+          };
+          try {
+            await navigator.clipboard.writeText(item.transcript);
+            flashCopied();
+          } catch (err) {
+            try {
+              const ta = document.createElement('textarea');
+              ta.value = item.transcript;
+              ta.style.position = 'fixed';
+              ta.style.opacity = '0';
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              flashCopied();
+            } catch (e2) {
+              console.error('Clipboard write failed:', e2);
+            }
+          }
+        });
+      }
+
+      transcribeQueue.push(item);
       pumpTranscribe();
-    } else if (msg.type === 'transcribe-err') {
-      console.error('Transcribe error:', msg.error);
-      const item = state.items.find(i => i.id === msg.id);
-      if (item) {
-        if (item._transcribeTimeout) { clearTimeout(item._transcribeTimeout); item._transcribeTimeout = null; }
+    }
+
+    async function pumpTranscribe() {
+      if (transcribeBusy) return;
+      const item = transcribeQueue.shift();
+      if (!item) return;
+      if (!item.decodedAudio) {
         markTranscriptError(item);
+        pumpTranscribe();
+        return;
       }
-      transcribeBusy = false;
-      pumpTranscribe();
-    }
-  });
+      transcribeBusy = true;
 
-  return transcribeWorker;
-}
-
-function markTranscriptError(item) {
-  item.transcriptStatus = 'err';
-  if (item.transcriptBtn) {
-    item.transcriptBtn.classList.remove('loading', 'ready', 'copied');
-    item.transcriptBtn.classList.add('err');
-    item.transcriptBtn.title = 'Transcription failed';
-  }
-}
-
-function updateTranscriptIcon(item) {
-  const btn = item.transcriptBtn;
-  if (!btn) return;
-  btn.classList.remove('loading', 'ready', 'copied', 'err');
-  if (item.transcriptStatus === 'loading') {
-    btn.classList.add('show', 'loading');
-    btn.textContent = 'transcribing…';
-    btn.title = '';
-  } else if (item.transcriptStatus === 'ready') {
-    btn.classList.add('show', 'ready');
-    btn.textContent = 'copy transcript';
-    btn.title = 'Click to copy transcript to clipboard';
-  } else if (item.transcriptStatus === 'err') {
-    btn.classList.add('show', 'err');
-    btn.textContent = 'transcript failed';
-    btn.title = 'Transcription failed — see console';
-  }
-}
-
-function startTranscription(item) {
-  ensureWorker();
-  // Kick off model preload on first call (no audio, just warms the pipeline)
-  if (!transcribeModelLoadStarted) {
-    transcribeModelLoadStarted = true;
-    transcribeWorker.postMessage({ type: 'preload' });
-  }
-
-  item.transcriptStatus = 'loading';
-  updateTranscriptIcon(item);
-
-  // Click handler — copies transcript when ready
-  if (!item._transcriptHandlerWired) {
-    item._transcriptHandlerWired = true;
-    item.transcriptBtn.addEventListener('click', async () => {
-      if (item.transcriptStatus !== 'ready' || !item.transcript) return;
-      const restoreText = 'copy transcript';
-      const flashCopied = () => {
-        item.transcriptBtn.classList.add('copied');
-        item.transcriptBtn.textContent = 'copied';
-        setTimeout(() => {
-          item.transcriptBtn.classList.remove('copied');
-          item.transcriptBtn.textContent = restoreText;
-        }, 1100);
-      };
       try {
-        await navigator.clipboard.writeText(item.transcript);
-        flashCopied();
+        const mono16k = await prepareForWhisper(item.decodedAudio);
+        const durationS = mono16k.length / 16000;
+        item.decodedAudio = null;
+
+        // Generous timeout: base.en should do 1s of audio in roughly 0.3-1s on
+        // typical hardware, so 5x realtime + 60s headroom is comfortable.
+        const timeoutMs = Math.max(60000, durationS * 5000 + 60000);
+        item._transcribeTimeout = setTimeout(() => {
+          console.warn(`[transcribe] timeout after ${timeoutMs}ms for id=${item.id}`);
+          markTranscriptError(item);
+          transcribeBusy = false;
+          pumpTranscribe();
+        }, timeoutMs);
+
+        transcribeWorker.postMessage(
+          { type: 'transcribe', id: item.id, audio: mono16k, sampleRate: 16000 },
+          [mono16k.buffer]
+        );
       } catch (err) {
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = item.transcript;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          flashCopied();
-        } catch (e2) {
-          console.error('Clipboard write failed:', e2);
+        console.error('Pre-Whisper resample failed:', err);
+        markTranscriptError(item);
+        transcribeBusy = false;
+        pumpTranscribe();
+      }
+    }
+
+    function transbufClear(item) {
+      // Hook for future cleanup; currently a no-op
+    }
+
+    async function prepareForWhisper(audioBuffer) {
+      const targetSr = 16000;
+      const nCh = audioBuffer.numberOfChannels;
+      const nFrames = audioBuffer.length;
+      const srcSr = audioBuffer.sampleRate;
+
+      // Mix to mono
+      const mono = new Float32Array(nFrames);
+      for (let c = 0; c < nCh; c++) {
+        const ch = audioBuffer.getChannelData(c);
+        for (let i = 0; i < nFrames; i++) mono[i] += ch[i];
+      }
+      if (nCh > 1) {
+        const inv = 1 / nCh;
+        for (let i = 0; i < nFrames; i++) mono[i] *= inv;
+      }
+
+      if (srcSr === targetSr) return mono;
+
+      // Linear-interp resample (good enough for Whisper input)
+      const ratio = srcSr / targetSr;
+      const outLen = Math.round(mono.length / ratio);
+      const out = new Float32Array(outLen);
+      for (let i = 0; i < outLen; i++) {
+        const srcIdx = i * ratio;
+        const i0 = Math.floor(srcIdx);
+        const i1 = Math.min(i0 + 1, mono.length - 1);
+        const frac = srcIdx - i0;
+        out[i] = mono[i0] * (1 - frac) + mono[i1] * frac;
+      }
+      return out;
+    }
+
+    function formatDuration(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+
+    // ============================================================
+    // Silence trimming — the heart of TRIMbaby
+    //
+    // Approach:
+    //   1. Mix to mono (analysis only — output preserves channel count).
+    //   2. Build TWO parallel envelopes in 20ms windows:
+    //        - broadband RMS (catches voice + noise floor)
+    //        - high-passed RMS at 3500 Hz (catches sibilants/fricatives
+    //          which sit ABOVE the floor on the broadband envelope but
+    //          carry critical speech information at sentence ends)
+    //   3. Auto-calibrate threshold per file:
+    //        floor = 5th percentile of broadband RMS (the truly quiet windows)
+    //        threshold = floor + 9 dB, with a hard ceiling of -35 dBFS
+    //        sibilant_threshold = HP floor + 6 dB
+    //   4. A window only counts as silence if BOTH envelopes are below their
+    //      respective thresholds. This is what protects "yesss" from getting
+    //      clipped — the broadband "ss" tail might dip below threshold, but
+    //      the HP envelope keeps it alive.
+    //   5. Find silence runs >= 400ms. For each, collapse the middle portion
+    //      so 250ms of silence remains (preserves natural cadence — fully
+    //      removing breath/decay gaps makes speech sound robotic).
+    //   6. Trim leading/trailing silence to 250ms each.
+    //   7. Concatenate kept regions with 12ms equal-power crossfades at every
+    //      seam to eliminate clicks.
+    //
+    // Graceful degradation:
+    //   If voice-to-floor gap is < 12 dB (e.g. recorded in an airport),
+    //   we don't trust ourselves to find silence reliably. Skip trimming
+    //   entirely, just transcode to 320 MP3, and flag it in the row detail.
+    // ============================================================
+
+    const ANALYSIS_WINDOW_MS = 20;
+    const SILENCE_DETECT_MS = 400;   // anything shorter, leave alone
+    const SILENCE_KEEP_MS = 250;   // long silences collapse to this
+    const EDGE_KEEP_MS = 250;   // leading/trailing silence trim target
+    const CROSSFADE_MS = 12;
+    const MARGIN_DB = 9;     // broadband threshold = floor + this
+    const SIBILANT_MARGIN_DB = 20;    // sibilant threshold = HP floor + this.
+    // Calibrated empirically: HP envelope of true silence
+    // sits ~p95 at floor+18dB; actual sibilants/fricatives
+    // sit ~floor+25–35dB. +20 cleanly separates the two.
+    const FLOOR_CEILING_DB = -35;   // never trust a "floor" louder than this
+    const MIN_GAP_DB = 12;    // below this, skip trimming entirely
+    const HP_CUTOFF_HZ = 3500;  // sibilant/fricative band
+
+    async function trimSilences(audioBuffer, onProgress) {
+      const sr = audioBuffer.sampleRate;
+      const nCh = audioBuffer.numberOfChannels;
+      const nFrames = audioBuffer.length;
+      const beforeMs = (nFrames / sr) * 1000;
+
+      if (onProgress) onProgress(0.05);
+
+      // Mix to mono for analysis (output keeps original channel layout)
+      const monoAnalysis = new Float32Array(nFrames);
+      for (let c = 0; c < nCh; c++) {
+        const ch = audioBuffer.getChannelData(c);
+        for (let i = 0; i < nFrames; i++) monoAnalysis[i] += ch[i];
+      }
+      if (nCh > 1) {
+        const inv = 1 / nCh;
+        for (let i = 0; i < nFrames; i++) monoAnalysis[i] *= inv;
+      }
+
+      // High-pass filter (Butterworth 2nd order, biquad form) — for sibilant detection.
+      // Single biquad is enough: we just need to identify HF energy presence,
+      // not produce broadcast-grade filtering.
+      const hp = highpassBiquad(monoAnalysis, sr, HP_CUTOFF_HZ);
+      if (onProgress) onProgress(0.25);
+
+      // Compute 20ms RMS windows, both envelopes
+      const winN = Math.max(1, Math.round(sr * ANALYSIS_WINDOW_MS / 1000));
+      const nWindows = Math.floor(nFrames / winN);
+      const rmsBb = new Float32Array(nWindows);
+      const rmsHp = new Float32Array(nWindows);
+      for (let w = 0; w < nWindows; w++) {
+        const start = w * winN;
+        let sumBb = 0, sumHp = 0;
+        for (let i = 0; i < winN; i++) {
+          const a = monoAnalysis[start + i];
+          const b = hp[start + i];
+          sumBb += a * a;
+          sumHp += b * b;
+        }
+        rmsBb[w] = Math.sqrt(sumBb / winN);
+        rmsHp[w] = Math.sqrt(sumHp / winN);
+      }
+      if (onProgress) onProgress(0.55);
+
+      // Convert to dBFS (clamp tiny values to avoid -Infinity)
+      const dbBb = new Float32Array(nWindows);
+      const dbHp = new Float32Array(nWindows);
+      for (let w = 0; w < nWindows; w++) {
+        dbBb[w] = 20 * Math.log10(Math.max(rmsBb[w], 1e-7));
+        dbHp[w] = 20 * Math.log10(Math.max(rmsHp[w], 1e-7));
+      }
+
+      // Auto-calibrate floor (5th percentile of broadband, ceiling-clamped)
+      const floorBb = clamp(percentile(dbBb, 5), -90, FLOOR_CEILING_DB);
+      const floorHp = clamp(percentile(dbHp, 5), -110, -30);
+      const voice = percentile(dbBb, 75); // top quartile = speaking level
+      const gap = voice - floorBb;
+
+      const lowGap = gap < MIN_GAP_DB;
+
+      // If gap is too tight, ship the file as-is — better to deliver the user's
+      // promised 320 MP3 than to risk eating words. Re-encode happens upstream.
+      if (lowGap) {
+        if (onProgress) onProgress(1);
+        return {
+          audio: audioBuffer,
+          sampleRate: sr,
+          beforeMs,
+          afterMs: beforeMs,
+          cuts: 0,
+          lowGap: true,
+        };
+      }
+
+      const thresholdBb = floorBb + MARGIN_DB;
+      const thresholdHp = floorHp + SIBILANT_MARGIN_DB;
+
+      // Build silence mask: window is silent iff BOTH envelopes below threshold
+      const silent = new Uint8Array(nWindows);
+      for (let w = 0; w < nWindows; w++) {
+        silent[w] = (dbBb[w] < thresholdBb && dbHp[w] < thresholdHp) ? 1 : 0;
+      }
+
+      // Find silence runs
+      const runs = []; // [{startW, endW}, ...]
+      {
+        let i = 0;
+        while (i < nWindows) {
+          if (silent[i]) {
+            let j = i;
+            while (j < nWindows && silent[j]) j++;
+            runs.push({ startW: i, endW: j });
+            i = j;
+          } else {
+            i++;
+          }
         }
       }
-    });
-  }
+      if (onProgress) onProgress(0.7);
 
-  transcribeQueue.push(item);
-  pumpTranscribe();
-}
+      // Build keep ranges (in sample indices) by walking runs.
+      // For long runs, cut from the middle so we preserve natural fade-in/out edges.
+      // For leading/trailing runs, trim to EDGE_KEEP_MS.
+      const detectFrames = Math.round(SILENCE_DETECT_MS * sr / 1000);
+      const keepFrames = Math.round(SILENCE_KEEP_MS * sr / 1000);
+      const edgeFrames = Math.round(EDGE_KEEP_MS * sr / 1000);
 
-async function pumpTranscribe() {
-  if (transcribeBusy) return;
-  const item = transcribeQueue.shift();
-  if (!item) return;
-  if (!item.decodedAudio) {
-    markTranscriptError(item);
-    pumpTranscribe();
-    return;
-  }
-  transcribeBusy = true;
+      const keepRanges = []; // [[startFrame, endFrame], ...]
+      let cursor = 0;
+      let cuts = 0;
 
-  try {
-    const mono16k = await prepareForWhisper(item.decodedAudio);
-    const durationS = mono16k.length / 16000;
-    item.decodedAudio = null;
+      for (let r = 0; r < runs.length; r++) {
+        const run = runs[r];
+        const runStart = run.startW * winN;
+        const runEnd = Math.min(run.endW * winN, nFrames);
+        const runLen = runEnd - runStart;
+        const isLeading = (r === 0 && run.startW === 0);
+        const isTrailing = (r === runs.length - 1 && run.endW === nWindows);
 
-    // Generous timeout: base.en should do 1s of audio in roughly 0.3-1s on
-    // typical hardware, so 5x realtime + 60s headroom is comfortable.
-    const timeoutMs = Math.max(60000, durationS * 5000 + 60000);
-    item._transcribeTimeout = setTimeout(() => {
-      console.warn(`[transcribe] timeout after ${timeoutMs}ms for id=${item.id}`);
-      markTranscriptError(item);
-      transcribeBusy = false;
-      pumpTranscribe();
-    }, timeoutMs);
+        if (isLeading) {
+          // Skip up to (runEnd - edgeFrames), keep the last edgeFrames of leading silence
+          const skipTo = Math.max(0, runEnd - edgeFrames);
+          cursor = skipTo;
+          if (skipTo > 0) cuts++;
+          continue;
+        }
+        if (isTrailing) {
+          // Keep up to (runStart + edgeFrames), drop the rest
+          const keepUntil = Math.min(nFrames, runStart + edgeFrames);
+          if (cursor < keepUntil) keepRanges.push([cursor, keepUntil]);
+          cursor = nFrames;
+          if (keepUntil < nFrames) cuts++;
+          continue;
+        }
+        if (runLen < detectFrames) {
+          // Short silence — leave it alone (natural speech rhythm)
+          continue;
+        }
+        // Long silence in the middle: collapse to keepFrames, removed from the center
+        const halfKeep = Math.floor(keepFrames / 2);
+        const skipStart = runStart + halfKeep;
+        const skipEnd = runEnd - (keepFrames - halfKeep);
+        if (skipEnd <= skipStart) continue; // sanity
+        keepRanges.push([cursor, skipStart]);
+        cursor = skipEnd;
+        cuts++;
+      }
+      if (cursor < nFrames) keepRanges.push([cursor, nFrames]);
 
-    transcribeWorker.postMessage(
-      { type: 'transcribe', id: item.id, audio: mono16k, sampleRate: 16000 },
-      [mono16k.buffer]
-    );
-  } catch (err) {
-    console.error('Pre-Whisper resample failed:', err);
-    markTranscriptError(item);
-    transcribeBusy = false;
-    pumpTranscribe();
-  }
-}
+      // Apply to all channels with crossfades
+      const xfadeFrames = Math.max(1, Math.round(sr * CROSSFADE_MS / 1000));
+      const outChannels = new Array(nCh);
+      let outLen = 0;
 
-function transbufClear(item) {
-  // Hook for future cleanup; currently a no-op
-}
+      // First, compute output length
+      for (let i = 0; i < keepRanges.length; i++) {
+        outLen += (keepRanges[i][1] - keepRanges[i][0]);
+        if (i > 0) outLen -= xfadeFrames; // crossfade overlaps eat into length
+      }
+      outLen = Math.max(0, outLen);
 
-async function prepareForWhisper(audioBuffer) {
-  const targetSr = 16000;
-  const nCh = audioBuffer.numberOfChannels;
-  const nFrames = audioBuffer.length;
-  const srcSr = audioBuffer.sampleRate;
+      for (let c = 0; c < nCh; c++) {
+        const src = audioBuffer.getChannelData(c);
+        const dst = new Float32Array(outLen);
+        let writePos = 0;
 
-  // Mix to mono
-  const mono = new Float32Array(nFrames);
-  for (let c = 0; c < nCh; c++) {
-    const ch = audioBuffer.getChannelData(c);
-    for (let i = 0; i < nFrames; i++) mono[i] += ch[i];
-  }
-  if (nCh > 1) {
-    const inv = 1 / nCh;
-    for (let i = 0; i < nFrames; i++) mono[i] *= inv;
-  }
+        for (let r = 0; r < keepRanges.length; r++) {
+          const [s, e] = keepRanges[r];
+          const segLen = e - s;
+          if (segLen <= 0) continue;
 
-  if (srcSr === targetSr) return mono;
+          if (r === 0) {
+            // First segment: copy as-is
+            for (let i = 0; i < segLen; i++) dst[writePos + i] = src[s + i];
+            writePos += segLen;
+          } else {
+            // Crossfade: the last xfadeFrames of dst should fade out while
+            // the first xfadeFrames of this segment fade in, summed.
+            const n = Math.min(xfadeFrames, segLen, writePos);
+            // Mix the overlap region
+            const overlapStart = writePos - n;
+            for (let i = 0; i < n; i++) {
+              // Equal-power-ish via linear ramps — cheap, sounds clean for short xfades
+              const t = (i + 1) / (n + 1);
+              const fadeOut = 1 - t;
+              const fadeIn = t;
+              dst[overlapStart + i] = dst[overlapStart + i] * fadeOut + src[s + i] * fadeIn;
+            }
+            // Append the rest of the segment after the overlap
+            const remaining = segLen - n;
+            for (let i = 0; i < remaining; i++) {
+              dst[writePos + i] = src[s + n + i];
+            }
+            writePos += remaining;
+          }
+        }
 
-  // Linear-interp resample (good enough for Whisper input)
-  const ratio = srcSr / targetSr;
-  const outLen = Math.round(mono.length / ratio);
-  const out = new Float32Array(outLen);
-  for (let i = 0; i < outLen; i++) {
-    const srcIdx = i * ratio;
-    const i0 = Math.floor(srcIdx);
-    const i1 = Math.min(i0 + 1, mono.length - 1);
-    const frac = srcIdx - i0;
-    out[i] = mono[i0] * (1 - frac) + mono[i1] * frac;
-  }
-  return out;
-}
+        // Truncate any tail (in case our outLen estimate was slightly off due to
+        // segments shorter than xfadeFrames)
+        outChannels[c] = dst.subarray(0, writePos);
+      }
 
-function formatDuration(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
+      if (onProgress) onProgress(1);
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 1000);
-}
+      // Wrap as a pseudo-AudioBuffer-like object the encoder can consume
+      // (we only need numberOfChannels / sampleRate / getChannelData / length)
+      const finalLen = outChannels[0] ? outChannels[0].length : 0;
+      const wrapper = {
+        sampleRate: sr,
+        numberOfChannels: nCh,
+        length: finalLen,
+        getChannelData: (i) => outChannels[i],
+      };
 
-// ============================================================
-// Silence trimming — the heart of TRIMbaby
-//
-// Approach:
-//   1. Mix to mono (analysis only — output preserves channel count).
-//   2. Build TWO parallel envelopes in 20ms windows:
-//        - broadband RMS (catches voice + noise floor)
-//        - high-passed RMS at 3500 Hz (catches sibilants/fricatives
-//          which sit ABOVE the floor on the broadband envelope but
-//          carry critical speech information at sentence ends)
-//   3. Auto-calibrate threshold per file:
-//        floor = 5th percentile of broadband RMS (the truly quiet windows)
-//        threshold = floor + 9 dB, with a hard ceiling of -35 dBFS
-//        sibilant_threshold = HP floor + 6 dB
-//   4. A window only counts as silence if BOTH envelopes are below their
-//      respective thresholds. This is what protects "yesss" from getting
-//      clipped — the broadband "ss" tail might dip below threshold, but
-//      the HP envelope keeps it alive.
-//   5. Find silence runs >= 400ms. For each, collapse the middle portion
-//      so 250ms of silence remains (preserves natural cadence — fully
-//      removing breath/decay gaps makes speech sound robotic).
-//   6. Trim leading/trailing silence to 250ms each.
-//   7. Concatenate kept regions with 12ms equal-power crossfades at every
-//      seam to eliminate clicks.
-//
-// Graceful degradation:
-//   If voice-to-floor gap is < 12 dB (e.g. recorded in an airport),
-//   we don't trust ourselves to find silence reliably. Skip trimming
-//   entirely, just transcode to 320 MP3, and flag it in the row detail.
-// ============================================================
-
-const ANALYSIS_WINDOW_MS = 20;
-const SILENCE_DETECT_MS  = 400;   // anything shorter, leave alone
-const SILENCE_KEEP_MS    = 250;   // long silences collapse to this
-const EDGE_KEEP_MS       = 250;   // leading/trailing silence trim target
-const CROSSFADE_MS       = 12;
-const MARGIN_DB          = 9;     // broadband threshold = floor + this
-const SIBILANT_MARGIN_DB = 20;    // sibilant threshold = HP floor + this.
-                                  // Calibrated empirically: HP envelope of true silence
-                                  // sits ~p95 at floor+18dB; actual sibilants/fricatives
-                                  // sit ~floor+25–35dB. +20 cleanly separates the two.
-const FLOOR_CEILING_DB   = -35;   // never trust a "floor" louder than this
-const MIN_GAP_DB         = 12;    // below this, skip trimming entirely
-const HP_CUTOFF_HZ       = 3500;  // sibilant/fricative band
-
-async function trimSilences(audioBuffer, onProgress) {
-  const sr = audioBuffer.sampleRate;
-  const nCh = audioBuffer.numberOfChannels;
-  const nFrames = audioBuffer.length;
-  const beforeMs = (nFrames / sr) * 1000;
-
-  if (onProgress) onProgress(0.05);
-
-  // Mix to mono for analysis (output keeps original channel layout)
-  const monoAnalysis = new Float32Array(nFrames);
-  for (let c = 0; c < nCh; c++) {
-    const ch = audioBuffer.getChannelData(c);
-    for (let i = 0; i < nFrames; i++) monoAnalysis[i] += ch[i];
-  }
-  if (nCh > 1) {
-    const inv = 1 / nCh;
-    for (let i = 0; i < nFrames; i++) monoAnalysis[i] *= inv;
-  }
-
-  // High-pass filter (Butterworth 2nd order, biquad form) — for sibilant detection.
-  // Single biquad is enough: we just need to identify HF energy presence,
-  // not produce broadcast-grade filtering.
-  const hp = highpassBiquad(monoAnalysis, sr, HP_CUTOFF_HZ);
-  if (onProgress) onProgress(0.25);
-
-  // Compute 20ms RMS windows, both envelopes
-  const winN = Math.max(1, Math.round(sr * ANALYSIS_WINDOW_MS / 1000));
-  const nWindows = Math.floor(nFrames / winN);
-  const rmsBb = new Float32Array(nWindows);
-  const rmsHp = new Float32Array(nWindows);
-  for (let w = 0; w < nWindows; w++) {
-    const start = w * winN;
-    let sumBb = 0, sumHp = 0;
-    for (let i = 0; i < winN; i++) {
-      const a = monoAnalysis[start + i];
-      const b = hp[start + i];
-      sumBb += a * a;
-      sumHp += b * b;
+      return {
+        audio: wrapper,
+        sampleRate: sr,
+        beforeMs,
+        afterMs: (finalLen / sr) * 1000,
+        cuts,
+        lowGap: false,
+      };
     }
-    rmsBb[w] = Math.sqrt(sumBb / winN);
-    rmsHp[w] = Math.sqrt(sumHp / winN);
-  }
-  if (onProgress) onProgress(0.55);
 
-  // Convert to dBFS (clamp tiny values to avoid -Infinity)
-  const dbBb = new Float32Array(nWindows);
-  const dbHp = new Float32Array(nWindows);
-  for (let w = 0; w < nWindows; w++) {
-    dbBb[w] = 20 * Math.log10(Math.max(rmsBb[w], 1e-7));
-    dbHp[w] = 20 * Math.log10(Math.max(rmsHp[w], 1e-7));
-  }
+    // ============================================================
+    // Helpers
+    // ============================================================
 
-  // Auto-calibrate floor (5th percentile of broadband, ceiling-clamped)
-  const floorBb = clamp(percentile(dbBb, 5), -90, FLOOR_CEILING_DB);
-  const floorHp = clamp(percentile(dbHp, 5), -110, -30);
-  const voice = percentile(dbBb, 75); // top quartile = speaking level
-  const gap = voice - floorBb;
+    function clamp(v, lo, hi) {
+      return v < lo ? lo : v > hi ? hi : v;
+    }
 
-  const lowGap = gap < MIN_GAP_DB;
+    // Approximate percentile via partial sort copy. nWindows is bounded
+    // (a 30-min file at 20ms windows is 90,000 entries) so a single sort is fine.
+    function percentile(arr, p) {
+      const sorted = Float32Array.from(arr);
+      sorted.sort();
+      const idx = clamp(Math.floor((p / 100) * (sorted.length - 1)), 0, sorted.length - 1);
+      return sorted[idx];
+    }
 
-  // If gap is too tight, ship the file as-is — better to deliver the user's
-  // promised 320 MP3 than to risk eating words. Re-encode happens upstream.
-  if (lowGap) {
-    if (onProgress) onProgress(1);
-    return {
-      audio: audioBuffer,
-      sampleRate: sr,
-      beforeMs,
-      afterMs: beforeMs,
-      cuts: 0,
-      lowGap: true,
-    };
-  }
+    // 2nd-order Butterworth highpass via direct-form biquad.
+    // Standard cookbook coefficients. Not phase-linear, but we're using this
+    // for envelope detection only — phase doesn't matter for energy measurement.
+    function highpassBiquad(input, sr, cutoffHz) {
+      const w0 = 2 * Math.PI * cutoffHz / sr;
+      const Q = Math.SQRT1_2; // Butterworth
+      const cosw = Math.cos(w0);
+      const sinw = Math.sin(w0);
+      const alpha = sinw / (2 * Q);
 
-  const thresholdBb = floorBb + MARGIN_DB;
-  const thresholdHp = floorHp + SIBILANT_MARGIN_DB;
+      const b0 = (1 + cosw) / 2;
+      const b1 = -(1 + cosw);
+      const b2 = (1 + cosw) / 2;
+      const a0 = 1 + alpha;
+      const a1 = -2 * cosw;
+      const a2 = 1 - alpha;
 
-  // Build silence mask: window is silent iff BOTH envelopes below threshold
-  const silent = new Uint8Array(nWindows);
-  for (let w = 0; w < nWindows; w++) {
-    silent[w] = (dbBb[w] < thresholdBb && dbHp[w] < thresholdHp) ? 1 : 0;
-  }
+      const nb0 = b0 / a0, nb1 = b1 / a0, nb2 = b2 / a0;
+      const na1 = a1 / a0, na2 = a2 / a0;
 
-  // Find silence runs
-  const runs = []; // [{startW, endW}, ...]
-  {
-    let i = 0;
-    while (i < nWindows) {
-      if (silent[i]) {
-        let j = i;
-        while (j < nWindows && silent[j]) j++;
-        runs.push({ startW: i, endW: j });
-        i = j;
+      const out = new Float32Array(input.length);
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < input.length; i++) {
+        const x0 = input[i];
+        const y0 = nb0 * x0 + nb1 * x1 + nb2 * x2 - na1 * y1 - na2 * y2;
+        out[i] = y0;
+        x2 = x1; x1 = x0;
+        y2 = y1; y1 = y0;
+      }
+      return out;
+    }
+
+    // ============================================================
+    // MP3 encoding via lamejs — adapted from MP3baby
+    // Same 320 CBR pipeline, same Info/ID3 headers, but takes the
+    // trimmed audio (which may be a real AudioBuffer or our wrapper)
+    // ============================================================
+
+    const LAME_SUPPORTED_RATES = [16000, 22050, 24000, 32000, 44100, 48000];
+
+    function pickOutputRate(srcRate) {
+      if (LAME_SUPPORTED_RATES.includes(srcRate)) return srcRate;
+      if (srcRate > 48000) return 48000;
+      for (const r of LAME_SUPPORTED_RATES) {
+        if (r >= srcRate) return r;
+      }
+      return 48000;
+    }
+
+    function resampleChannel(input, srcRate, dstRate) {
+      if (srcRate === dstRate) return input;
+      const ratio = srcRate / dstRate;
+      const outLen = Math.round(input.length / ratio);
+      const out = new Float32Array(outLen);
+      for (let i = 0; i < outLen; i++) {
+        const srcIdx = i * ratio;
+        const i0 = Math.floor(srcIdx);
+        const i1 = Math.min(i0 + 1, input.length - 1);
+        const frac = srcIdx - i0;
+        out[i] = input[i0] * (1 - frac) + input[i1] * frac;
+      }
+      return out;
+    }
+
+    function floatToInt16(f32) {
+      const out = new Int16Array(f32.length);
+      for (let i = 0; i < f32.length; i++) {
+        let s = f32[i];
+        if (s > 1) s = 1; else if (s < -1) s = -1;
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return out;
+    }
+
+    async function encodeMp3(audio, srcRate, onProgress, fileTitle) {
+      if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
+        throw new Error('MP3 encoder failed to load. Check your connection and reload.');
+      }
+      const outRate = pickOutputRate(srcRate);
+      const nCh = Math.min(audio.numberOfChannels, 2);
+      const kbps = 320;
+
+      let left = audio.getChannelData(0);
+      let right = nCh === 2 ? audio.getChannelData(1) : null;
+      if (outRate !== srcRate) {
+        left = resampleChannel(left, srcRate, outRate);
+        if (right) right = resampleChannel(right, srcRate, outRate);
+      }
+
+      const leftI16 = floatToInt16(left);
+      const rightI16 = right ? floatToInt16(right) : null;
+
+      const encoder = new lamejs.Mp3Encoder(nCh, outRate, kbps);
+      const SAMPLE_BLOCK = 1152;
+      const mp3Chunks = [];
+      const totalSamples = leftI16.length;
+      let frameCount = 0;
+
+      let samplesSinceYield = 0;
+      const YIELD_EVERY = 1152 * 50;
+
+      for (let i = 0; i < totalSamples; i += SAMPLE_BLOCK) {
+        const end = Math.min(i + SAMPLE_BLOCK, totalSamples);
+        const l = leftI16.subarray(i, end);
+        let chunk;
+        if (rightI16) {
+          const r = rightI16.subarray(i, end);
+          chunk = encoder.encodeBuffer(l, r);
+        } else {
+          chunk = encoder.encodeBuffer(l);
+        }
+        if (chunk && chunk.length > 0) mp3Chunks.push(chunk);
+        frameCount++;
+
+        samplesSinceYield += (end - i);
+        if (samplesSinceYield >= YIELD_EVERY) {
+          samplesSinceYield = 0;
+          if (onProgress) onProgress(i / totalSamples);
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(r => setTimeout(r, 0));
+        }
+      }
+
+      const flush = encoder.flush();
+      if (flush && flush.length > 0) mp3Chunks.push(flush);
+
+      let audioBytes = 0;
+      for (const c of mp3Chunks) audioBytes += c.length;
+
+      const infoFrame = buildInfoFrame(outRate, nCh, kbps, frameCount + 1, audioBytes);
+      const id3Tag = buildId3v2Tag(fileTitle || 'Untitled');
+
+      if (onProgress) onProgress(1);
+      return new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
+    }
+
+    // ============================================================
+    // Xing/Info CBR header — same as MP3baby
+    // ============================================================
+    function mp3FrameSize(sampleRate, bitrateKbps) {
+      return Math.floor((144 * bitrateKbps * 1000) / sampleRate);
+    }
+
+    function sideInfoLength(mpegVersion, channels) {
+      if (mpegVersion === 1) return channels === 1 ? 17 : 32;
+      return channels === 1 ? 9 : 17;
+    }
+
+    function buildInfoFrame(sampleRate, channels, bitrateKbps, totalFrames, audioBytes) {
+      const mpeg1Rates = [32000, 44100, 48000];
+      const mpeg2Rates = [16000, 22050, 24000];
+      let mpegVersion, versionBits;
+      if (mpeg1Rates.includes(sampleRate)) {
+        mpegVersion = 1; versionBits = 0b11;
+      } else if (mpeg2Rates.includes(sampleRate)) {
+        mpegVersion = 2; versionBits = 0b10;
       } else {
-        i++;
+        mpegVersion = 1; versionBits = 0b11;
       }
+
+      const mpeg1L3Rates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+      const mpeg2L3Rates = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+      const rateTable = mpegVersion === 1 ? mpeg1L3Rates : mpeg2L3Rates;
+      let bitrateIdx = rateTable.indexOf(bitrateKbps);
+      if (bitrateIdx < 0) bitrateIdx = rateTable.length - 1;
+
+      const sr1 = [44100, 48000, 32000];
+      const sr2 = [22050, 24000, 16000];
+      const srTable = mpegVersion === 1 ? sr1 : sr2;
+      let srIdx = srTable.indexOf(sampleRate);
+      if (srIdx < 0) srIdx = 0;
+
+      const frameSize = mp3FrameSize(sampleRate, bitrateKbps);
+      const sideLen = sideInfoLength(mpegVersion, channels);
+      const channelMode = channels === 1 ? 0b11 : 0b00;
+
+      const frame = new Uint8Array(frameSize);
+      frame[0] = 0xFF;
+      frame[1] = 0xE0 | (versionBits << 3) | (0b01 << 1) | 1;
+      frame[2] = (bitrateIdx << 4) | (srIdx << 2) | 0;
+      frame[3] = (channelMode << 6) | 0;
+
+      const tagStart = 4 + sideLen;
+      frame[tagStart + 0] = 0x49; // I
+      frame[tagStart + 1] = 0x6E; // n
+      frame[tagStart + 2] = 0x66; // f
+      frame[tagStart + 3] = 0x6F; // o
+
+      frame[tagStart + 4] = 0x00;
+      frame[tagStart + 5] = 0x00;
+      frame[tagStart + 6] = 0x00;
+      frame[tagStart + 7] = 0x07;
+
+      writeUint32BE(frame, tagStart + 8, totalFrames);
+      writeUint32BE(frame, tagStart + 12, audioBytes);
+
+      return frame;
     }
-  }
-  if (onProgress) onProgress(0.7);
 
-  // Build keep ranges (in sample indices) by walking runs.
-  // For long runs, cut from the middle so we preserve natural fade-in/out edges.
-  // For leading/trailing runs, trim to EDGE_KEEP_MS.
-  const detectFrames = Math.round(SILENCE_DETECT_MS * sr / 1000);
-  const keepFrames = Math.round(SILENCE_KEEP_MS * sr / 1000);
-  const edgeFrames = Math.round(EDGE_KEEP_MS * sr / 1000);
-
-  const keepRanges = []; // [[startFrame, endFrame], ...]
-  let cursor = 0;
-  let cuts = 0;
-
-  for (let r = 0; r < runs.length; r++) {
-    const run = runs[r];
-    const runStart = run.startW * winN;
-    const runEnd = Math.min(run.endW * winN, nFrames);
-    const runLen = runEnd - runStart;
-    const isLeading = (r === 0 && run.startW === 0);
-    const isTrailing = (r === runs.length - 1 && run.endW === nWindows);
-
-    if (isLeading) {
-      // Skip up to (runEnd - edgeFrames), keep the last edgeFrames of leading silence
-      const skipTo = Math.max(0, runEnd - edgeFrames);
-      cursor = skipTo;
-      if (skipTo > 0) cuts++;
-      continue;
+    function writeUint32BE(arr, offset, value) {
+      arr[offset] = (value >>> 24) & 0xFF;
+      arr[offset + 1] = (value >>> 16) & 0xFF;
+      arr[offset + 2] = (value >>> 8) & 0xFF;
+      arr[offset + 3] = value & 0xFF;
     }
-    if (isTrailing) {
-      // Keep up to (runStart + edgeFrames), drop the rest
-      const keepUntil = Math.min(nFrames, runStart + edgeFrames);
-      if (cursor < keepUntil) keepRanges.push([cursor, keepUntil]);
-      cursor = nFrames;
-      if (keepUntil < nFrames) cuts++;
-      continue;
+
+    function buildId3v2Tag(title) {
+      const cleanTitle = title.replace(/\.[^.]+$/, '');
+      const titleUtf16 = stringToUtf16LE(cleanTitle);
+      const tit2Payload = new Uint8Array(1 + 2 + titleUtf16.length);
+      tit2Payload[0] = 0x01;
+      tit2Payload[1] = 0xFF;
+      tit2Payload[2] = 0xFE;
+      tit2Payload.set(titleUtf16, 3);
+
+      const tit2Header = new Uint8Array(10);
+      tit2Header[0] = 0x54; // T
+      tit2Header[1] = 0x49; // I
+      tit2Header[2] = 0x54; // T
+      tit2Header[3] = 0x32; // 2
+      writeUint32BE(tit2Header, 4, tit2Payload.length);
+      tit2Header[8] = 0x00;
+      tit2Header[9] = 0x00;
+
+      const frameTotal = tit2Header.length + tit2Payload.length;
+
+      const id3Header = new Uint8Array(10);
+      id3Header[0] = 0x49; // I
+      id3Header[1] = 0x44; // D
+      id3Header[2] = 0x33; // 3
+      id3Header[3] = 0x03;
+      id3Header[4] = 0x00;
+      id3Header[5] = 0x00;
+      const sz = frameTotal;
+      id3Header[6] = (sz >>> 21) & 0x7F;
+      id3Header[7] = (sz >>> 14) & 0x7F;
+      id3Header[8] = (sz >>> 7) & 0x7F;
+      id3Header[9] = sz & 0x7F;
+
+      const out = new Uint8Array(id3Header.length + frameTotal);
+      out.set(id3Header, 0);
+      out.set(tit2Header, id3Header.length);
+      out.set(tit2Payload, id3Header.length + tit2Header.length);
+      return out;
     }
-    if (runLen < detectFrames) {
-      // Short silence — leave it alone (natural speech rhythm)
-      continue;
-    }
-    // Long silence in the middle: collapse to keepFrames, removed from the center
-    const halfKeep = Math.floor(keepFrames / 2);
-    const skipStart = runStart + halfKeep;
-    const skipEnd = runEnd - (keepFrames - halfKeep);
-    if (skipEnd <= skipStart) continue; // sanity
-    keepRanges.push([cursor, skipStart]);
-    cursor = skipEnd;
-    cuts++;
-  }
-  if (cursor < nFrames) keepRanges.push([cursor, nFrames]);
 
-  // Apply to all channels with crossfades
-  const xfadeFrames = Math.max(1, Math.round(sr * CROSSFADE_MS / 1000));
-  const outChannels = new Array(nCh);
-  let outLen = 0;
-
-  // First, compute output length
-  for (let i = 0; i < keepRanges.length; i++) {
-    outLen += (keepRanges[i][1] - keepRanges[i][0]);
-    if (i > 0) outLen -= xfadeFrames; // crossfade overlaps eat into length
-  }
-  outLen = Math.max(0, outLen);
-
-  for (let c = 0; c < nCh; c++) {
-    const src = audioBuffer.getChannelData(c);
-    const dst = new Float32Array(outLen);
-    let writePos = 0;
-
-    for (let r = 0; r < keepRanges.length; r++) {
-      const [s, e] = keepRanges[r];
-      const segLen = e - s;
-      if (segLen <= 0) continue;
-
-      if (r === 0) {
-        // First segment: copy as-is
-        for (let i = 0; i < segLen; i++) dst[writePos + i] = src[s + i];
-        writePos += segLen;
-      } else {
-        // Crossfade: the last xfadeFrames of dst should fade out while
-        // the first xfadeFrames of this segment fade in, summed.
-        const n = Math.min(xfadeFrames, segLen, writePos);
-        // Mix the overlap region
-        const overlapStart = writePos - n;
-        for (let i = 0; i < n; i++) {
-          // Equal-power-ish via linear ramps — cheap, sounds clean for short xfades
-          const t = (i + 1) / (n + 1);
-          const fadeOut = 1 - t;
-          const fadeIn = t;
-          dst[overlapStart + i] = dst[overlapStart + i] * fadeOut + src[s + i] * fadeIn;
-        }
-        // Append the rest of the segment after the overlap
-        const remaining = segLen - n;
-        for (let i = 0; i < remaining; i++) {
-          dst[writePos + i] = src[s + n + i];
-        }
-        writePos += remaining;
+    function stringToUtf16LE(str) {
+      const out = new Uint8Array(str.length * 2);
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        out[i * 2] = code & 0xFF;
+        out[i * 2 + 1] = (code >>> 8) & 0xFF;
       }
+      return out;
     }
-
-    // Truncate any tail (in case our outLen estimate was slightly off due to
-    // segments shorter than xfadeFrames)
-    outChannels[c] = dst.subarray(0, writePos);
-  }
-
-  if (onProgress) onProgress(1);
-
-  // Wrap as a pseudo-AudioBuffer-like object the encoder can consume
-  // (we only need numberOfChannels / sampleRate / getChannelData / length)
-  const finalLen = outChannels[0] ? outChannels[0].length : 0;
-  const wrapper = {
-    sampleRate: sr,
-    numberOfChannels: nCh,
-    length: finalLen,
-    getChannelData: (i) => outChannels[i],
-  };
-
-  return {
-    audio: wrapper,
-    sampleRate: sr,
-    beforeMs,
-    afterMs: (finalLen / sr) * 1000,
-    cuts,
-    lowGap: false,
-  };
-}
-
-// ============================================================
-// Helpers
-// ============================================================
-
-function clamp(v, lo, hi) {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
-// Approximate percentile via partial sort copy. nWindows is bounded
-// (a 30-min file at 20ms windows is 90,000 entries) so a single sort is fine.
-function percentile(arr, p) {
-  const sorted = Float32Array.from(arr);
-  sorted.sort();
-  const idx = clamp(Math.floor((p / 100) * (sorted.length - 1)), 0, sorted.length - 1);
-  return sorted[idx];
-}
-
-// 2nd-order Butterworth highpass via direct-form biquad.
-// Standard cookbook coefficients. Not phase-linear, but we're using this
-// for envelope detection only — phase doesn't matter for energy measurement.
-function highpassBiquad(input, sr, cutoffHz) {
-  const w0 = 2 * Math.PI * cutoffHz / sr;
-  const Q = Math.SQRT1_2; // Butterworth
-  const cosw = Math.cos(w0);
-  const sinw = Math.sin(w0);
-  const alpha = sinw / (2 * Q);
-
-  const b0 = (1 + cosw) / 2;
-  const b1 = -(1 + cosw);
-  const b2 = (1 + cosw) / 2;
-  const a0 = 1 + alpha;
-  const a1 = -2 * cosw;
-  const a2 = 1 - alpha;
-
-  const nb0 = b0 / a0, nb1 = b1 / a0, nb2 = b2 / a0;
-  const na1 = a1 / a0, na2 = a2 / a0;
-
-  const out = new Float32Array(input.length);
-  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-  for (let i = 0; i < input.length; i++) {
-    const x0 = input[i];
-    const y0 = nb0 * x0 + nb1 * x1 + nb2 * x2 - na1 * y1 - na2 * y2;
-    out[i] = y0;
-    x2 = x1; x1 = x0;
-    y2 = y1; y1 = y0;
-  }
-  return out;
-}
-
-// ============================================================
-// MP3 encoding via lamejs — adapted from MP3baby
-// Same 320 CBR pipeline, same Info/ID3 headers, but takes the
-// trimmed audio (which may be a real AudioBuffer or our wrapper)
-// ============================================================
-
-const LAME_SUPPORTED_RATES = [16000, 22050, 24000, 32000, 44100, 48000];
-
-function pickOutputRate(srcRate) {
-  if (LAME_SUPPORTED_RATES.includes(srcRate)) return srcRate;
-  if (srcRate > 48000) return 48000;
-  for (const r of LAME_SUPPORTED_RATES) {
-    if (r >= srcRate) return r;
-  }
-  return 48000;
-}
-
-function resampleChannel(input, srcRate, dstRate) {
-  if (srcRate === dstRate) return input;
-  const ratio = srcRate / dstRate;
-  const outLen = Math.round(input.length / ratio);
-  const out = new Float32Array(outLen);
-  for (let i = 0; i < outLen; i++) {
-    const srcIdx = i * ratio;
-    const i0 = Math.floor(srcIdx);
-    const i1 = Math.min(i0 + 1, input.length - 1);
-    const frac = srcIdx - i0;
-    out[i] = input[i0] * (1 - frac) + input[i1] * frac;
-  }
-  return out;
-}
-
-function floatToInt16(f32) {
-  const out = new Int16Array(f32.length);
-  for (let i = 0; i < f32.length; i++) {
-    let s = f32[i];
-    if (s > 1) s = 1; else if (s < -1) s = -1;
-    out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  return out;
-}
-
-async function encodeMp3(audio, srcRate, onProgress, fileTitle) {
-  if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
-    throw new Error('MP3 encoder failed to load. Check your connection and reload.');
-  }
-  const outRate = pickOutputRate(srcRate);
-  const nCh = Math.min(audio.numberOfChannels, 2);
-  const kbps = 320;
-
-  let left = audio.getChannelData(0);
-  let right = nCh === 2 ? audio.getChannelData(1) : null;
-  if (outRate !== srcRate) {
-    left = resampleChannel(left, srcRate, outRate);
-    if (right) right = resampleChannel(right, srcRate, outRate);
-  }
-
-  const leftI16 = floatToInt16(left);
-  const rightI16 = right ? floatToInt16(right) : null;
-
-  const encoder = new lamejs.Mp3Encoder(nCh, outRate, kbps);
-  const SAMPLE_BLOCK = 1152;
-  const mp3Chunks = [];
-  const totalSamples = leftI16.length;
-  let frameCount = 0;
-
-  let samplesSinceYield = 0;
-  const YIELD_EVERY = 1152 * 50;
-
-  for (let i = 0; i < totalSamples; i += SAMPLE_BLOCK) {
-    const end = Math.min(i + SAMPLE_BLOCK, totalSamples);
-    const l = leftI16.subarray(i, end);
-    let chunk;
-    if (rightI16) {
-      const r = rightI16.subarray(i, end);
-      chunk = encoder.encodeBuffer(l, r);
-    } else {
-      chunk = encoder.encodeBuffer(l);
-    }
-    if (chunk && chunk.length > 0) mp3Chunks.push(chunk);
-    frameCount++;
-
-    samplesSinceYield += (end - i);
-    if (samplesSinceYield >= YIELD_EVERY) {
-      samplesSinceYield = 0;
-      if (onProgress) onProgress(i / totalSamples);
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise(r => setTimeout(r, 0));
-    }
-  }
-
-  const flush = encoder.flush();
-  if (flush && flush.length > 0) mp3Chunks.push(flush);
-
-  let audioBytes = 0;
-  for (const c of mp3Chunks) audioBytes += c.length;
-
-  const infoFrame = buildInfoFrame(outRate, nCh, kbps, frameCount + 1, audioBytes);
-  const id3Tag = buildId3v2Tag(fileTitle || 'Untitled');
-
-  if (onProgress) onProgress(1);
-  return new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
-}
-
-// ============================================================
-// Xing/Info CBR header — same as MP3baby
-// ============================================================
-function mp3FrameSize(sampleRate, bitrateKbps) {
-  return Math.floor((144 * bitrateKbps * 1000) / sampleRate);
-}
-
-function sideInfoLength(mpegVersion, channels) {
-  if (mpegVersion === 1) return channels === 1 ? 17 : 32;
-  return channels === 1 ? 9 : 17;
-}
-
-function buildInfoFrame(sampleRate, channels, bitrateKbps, totalFrames, audioBytes) {
-  const mpeg1Rates = [32000, 44100, 48000];
-  const mpeg2Rates = [16000, 22050, 24000];
-  let mpegVersion, versionBits;
-  if (mpeg1Rates.includes(sampleRate)) {
-    mpegVersion = 1; versionBits = 0b11;
-  } else if (mpeg2Rates.includes(sampleRate)) {
-    mpegVersion = 2; versionBits = 0b10;
-  } else {
-    mpegVersion = 1; versionBits = 0b11;
-  }
-
-  const mpeg1L3Rates = [0,32,40,48,56,64,80,96,112,128,160,192,224,256,320];
-  const mpeg2L3Rates = [0,8,16,24,32,40,48,56,64,80,96,112,128,144,160];
-  const rateTable = mpegVersion === 1 ? mpeg1L3Rates : mpeg2L3Rates;
-  let bitrateIdx = rateTable.indexOf(bitrateKbps);
-  if (bitrateIdx < 0) bitrateIdx = rateTable.length - 1;
-
-  const sr1 = [44100, 48000, 32000];
-  const sr2 = [22050, 24000, 16000];
-  const srTable = mpegVersion === 1 ? sr1 : sr2;
-  let srIdx = srTable.indexOf(sampleRate);
-  if (srIdx < 0) srIdx = 0;
-
-  const frameSize = mp3FrameSize(sampleRate, bitrateKbps);
-  const sideLen = sideInfoLength(mpegVersion, channels);
-  const channelMode = channels === 1 ? 0b11 : 0b00;
-
-  const frame = new Uint8Array(frameSize);
-  frame[0] = 0xFF;
-  frame[1] = 0xE0 | (versionBits << 3) | (0b01 << 1) | 1;
-  frame[2] = (bitrateIdx << 4) | (srIdx << 2) | 0;
-  frame[3] = (channelMode << 6) | 0;
-
-  const tagStart = 4 + sideLen;
-  frame[tagStart + 0] = 0x49; // I
-  frame[tagStart + 1] = 0x6E; // n
-  frame[tagStart + 2] = 0x66; // f
-  frame[tagStart + 3] = 0x6F; // o
-
-  frame[tagStart + 4] = 0x00;
-  frame[tagStart + 5] = 0x00;
-  frame[tagStart + 6] = 0x00;
-  frame[tagStart + 7] = 0x07;
-
-  writeUint32BE(frame, tagStart + 8, totalFrames);
-  writeUint32BE(frame, tagStart + 12, audioBytes);
-
-  return frame;
-}
-
-function writeUint32BE(arr, offset, value) {
-  arr[offset]     = (value >>> 24) & 0xFF;
-  arr[offset + 1] = (value >>> 16) & 0xFF;
-  arr[offset + 2] = (value >>> 8) & 0xFF;
-  arr[offset + 3] = value & 0xFF;
-}
-
-function buildId3v2Tag(title) {
-  const cleanTitle = title.replace(/\.[^.]+$/, '');
-  const titleUtf16 = stringToUtf16LE(cleanTitle);
-  const tit2Payload = new Uint8Array(1 + 2 + titleUtf16.length);
-  tit2Payload[0] = 0x01;
-  tit2Payload[1] = 0xFF;
-  tit2Payload[2] = 0xFE;
-  tit2Payload.set(titleUtf16, 3);
-
-  const tit2Header = new Uint8Array(10);
-  tit2Header[0] = 0x54; // T
-  tit2Header[1] = 0x49; // I
-  tit2Header[2] = 0x54; // T
-  tit2Header[3] = 0x32; // 2
-  writeUint32BE(tit2Header, 4, tit2Payload.length);
-  tit2Header[8] = 0x00;
-  tit2Header[9] = 0x00;
-
-  const frameTotal = tit2Header.length + tit2Payload.length;
-
-  const id3Header = new Uint8Array(10);
-  id3Header[0] = 0x49; // I
-  id3Header[1] = 0x44; // D
-  id3Header[2] = 0x33; // 3
-  id3Header[3] = 0x03;
-  id3Header[4] = 0x00;
-  id3Header[5] = 0x00;
-  const sz = frameTotal;
-  id3Header[6] = (sz >>> 21) & 0x7F;
-  id3Header[7] = (sz >>> 14) & 0x7F;
-  id3Header[8] = (sz >>> 7) & 0x7F;
-  id3Header[9] = sz & 0x7F;
-
-  const out = new Uint8Array(id3Header.length + frameTotal);
-  out.set(id3Header, 0);
-  out.set(tit2Header, id3Header.length);
-  out.set(tit2Payload, id3Header.length + tit2Header.length);
-  return out;
-}
-
-function stringToUtf16LE(str) {
-  const out = new Uint8Array(str.length * 2);
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    out[i * 2] = code & 0xFF;
-    out[i * 2 + 1] = (code >>> 8) & 0xFF;
-  }
-  return out;
-}
-</script>
+  </script>
 </body>
+
 </html>

@@ -329,6 +329,20 @@
     }
   }
 </style>
+<script>
+(function initTheme() {
+  const saved = (() => {
+    try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+  })();
+  // Inherit LUFSbaby's theme choice if the user has one, so the family feels unified
+  const lufsSaved = (() => {
+    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+  })();
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || lufsSaved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -382,18 +396,7 @@
 // ============================================================
 // Theme toggle
 // ============================================================
-(function initTheme() {
-  const saved = (() => {
-    try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
-  })();
-  // Inherit LUFSbaby's theme choice if the user has one, so the family feels unified
-  const lufsSaved = (() => {
-    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
-  })();
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || lufsSaved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('themeToggle');

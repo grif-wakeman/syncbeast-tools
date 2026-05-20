@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>SyncBeast</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
-<!--
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>SyncBeast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!--
   ============================================================
   ADDING A NEW APP
   ============================================================
@@ -25,452 +26,510 @@
   ============================================================
 -->
 
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --accent: #2a6f4a;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --accent: #8ace00;
-  }
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --accent: #2a6f4a;
+    }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    overflow: hidden;
-  }
-/*   html { transition: background 0.2s; }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --accent: #8ace00;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    /*   html { transition: background 0.2s; }
  */
-  .app-shell {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-  }
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
 
-  /* ---------- Switcher bar ---------- */
-  .switcher {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 1.25rem;
-    border-bottom: 1px solid var(--line);
-    background: var(--bg);
-  }
+    /* ---------- Switcher bar ---------- */
+    .switcher {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
 
-  .switcher-apps {
-    display: flex;
-    align-items: center;
-    flex: 1 1 auto;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    /* Tiny right padding so the last button's overlapped border isn't clipped */
-    padding-right: 2px;
-  }
-  .switcher-apps::-webkit-scrollbar { display: none; }
+    .switcher-apps {
+      display: flex;
+      align-items: center;
+      flex: 1 1 auto;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      /* Tiny right padding so the last button's overlapped border isn't clipped */
+      padding-right: 2px;
+    }
 
-  /* Mirrors the .spec-opt pattern from the individual apps:
+    .switcher-apps::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Mirrors the .spec-opt pattern from the individual apps:
      every button has its own full border, adjacent buttons overlap their
      left/right seams with margin-left: -1px, and z-index lifts the
      hovered / active button so its full border paints on top. */
-  .app-btn {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.35rem 0.7rem;
-    font-family: inherit;
-    font-size: 0.72rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--dim);
-    white-space: nowrap;
-    letter-spacing: 0.01em;
-    transition: color 0.12s, background 0.12s, border-color 0.12s;
-    position: relative;
-  }
-  .app-btn + .app-btn { margin-left: -1px; }
-  .app-btn:hover {
-    color: var(--ink);
-    border-color: var(--ink);
-    z-index: 2;
-  }
-  .app-btn[aria-current="page"] {
-    color: var(--ink);
-    background: var(--panel-2);
-    font-weight: 700;
-    z-index: 1;
-  }
+    .app-btn {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.35rem 0.7rem;
+      font-family: inherit;
+      font-size: 0.72rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--dim);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+      transition: color 0.12s, background 0.12s, border-color 0.12s;
+      position: relative;
+    }
 
-  .theme-toggle {
-    flex: 0 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.35rem 0.55rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.15s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
+    .app-btn+.app-btn {
+      margin-left: -1px;
+    }
 
-  /* ---------- Frame area: double-buffered iframes ----------
+    .app-btn:hover {
+      color: var(--ink);
+      border-color: var(--ink);
+      z-index: 2;
+    }
+
+    .app-btn[aria-current="page"] {
+      color: var(--ink);
+      background: var(--panel-2);
+      font-weight: 700;
+      z-index: 1;
+    }
+
+    .theme-toggle {
+      flex: 0 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.35rem 0.55rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.15s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    /* ---------- Frame area: double-buffered iframes ----------
      Both iframes are stacked. The "active" one is visible and interactive;
      the "idle" one loads the next app invisibly behind. Once the idle
      iframe fires its load event, we swap their roles instantly — so the
      user never sees a blank/white intermediate state. */
-  .frame-wrap {
-    flex: 1 1 auto;
-    position: relative;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  iframe.app-frame {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: var(--bg);
-    display: block;
-    opacity: 0;
-    pointer-events: none;
-  }
-  iframe.app-frame.is-active {
-    opacity: 1;
-    pointer-events: auto;
-    z-index: 1;
-  }
+    .frame-wrap {
+      flex: 1 1 auto;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
 
-  /* Subtle "still loading" hint — only appears if a load takes a while.
+    iframe.app-frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--bg);
+      display: block;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    iframe.app-frame.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 1;
+    }
+
+    /* Subtle "still loading" hint — only appears if a load takes a while.
      With double-buffering this is rare; mostly the swap feels instant. */
-  .loading-hint {
-    position: absolute;
-    top: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    color: var(--dim);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    letter-spacing: 0.05em;
-    z-index: 2;
-  }
-  .loading-hint.visible { opacity: 1; }
+    .loading-hint {
+      position: absolute;
+      top: 0.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--dim);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      letter-spacing: 0.05em;
+      z-index: 2;
+    }
 
-  /* ---------- Tighter on small screens ---------- */
-  @media (max-width: 640px) {
-    .switcher { padding: 0.5rem 0.6rem; gap: 0.5rem; }
-    .app-btn { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
-    .theme-toggle { padding: 0.3rem 0.45rem; font-size: 0.66rem; }
-  }
-</style>
+    .loading-hint.visible {
+      opacity: 1;
+    }
+
+    /* ---------- Tighter on small screens ---------- */
+    @media (max-width: 640px) {
+      .switcher {
+        padding: 0.5rem 0.6rem;
+        gap: 0.5rem;
+      }
+
+      .app-btn {
+        padding: 0.3rem 0.55rem;
+        font-size: 0.68rem;
+      }
+
+      .theme-toggle {
+        padding: 0.3rem 0.45rem;
+        font-size: 0.66rem;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="app-shell">
-  <nav class="switcher" aria-label="App switcher">
-    <div class="switcher-apps" id="switcherApps" role="tablist"></div>
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-      <span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span>
-    </button>
-  </nav>
+  <div class="app-shell">
+    <nav class="switcher" aria-label="App switcher">
+      <div class="switcher-apps" id="switcherApps" role="tablist"></div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span>
+      </button>
+    </nav>
 
-  <div class="frame-wrap">
-    <div class="loading-hint" id="loadingHint">loading</div>
-    <iframe id="frameA" class="app-frame" title="app" referrerpolicy="no-referrer"></iframe>
-    <iframe id="frameB" class="app-frame" title="app" referrerpolicy="no-referrer"></iframe>
+    <div class="frame-wrap">
+      <div class="loading-hint" id="loadingHint">loading</div>
+      <iframe id="frameA" class="app-frame" title="app" referrerpolicy="no-referrer"></iframe>
+      <iframe id="frameB" class="app-frame" title="app" referrerpolicy="no-referrer"></iframe>
+    </div>
   </div>
-</div>
 
-<script>
-(function () {
-  // ============================================================
-  // APP MANIFEST — add new apps here. Order = order shown in bar.
-  // ============================================================
-  const APPS = [
-    { id: 'aifbaby',    name: 'AIFbaby',    file: 'apps/aifbaby.html'    },
-    { id: 'wavbaby',    name: 'WAVbaby',    file: 'apps/wavbaby.html'    },
-    { id: 'mp3baby',    name: 'MP3baby',    file: 'apps/mp3baby.html'    },
-    { id: 'trimbaby',   name: 'TRIMbaby',   file: 'apps/trimbaby.html'   },
-    { id: 'lufsbaby',   name: 'LUFSbaby',   file: 'apps/lufsbaby.html'   },
-    { id: 'tapbaby',    name: 'TAPbaby',    file: 'apps/tapbaby.html'    },
-    { id: 'keybaby',    name: 'KEYbaby',    file: 'apps/keybaby.html'    },
-    { id: 'solbaby',    name: 'SOLbaby',    file: 'apps/solbaby.html'    },
-    { id: 'savethatad', name: 'SaveThatAd', file: 'apps/savethatad.html' },
-    // Example placeholder for the 10th app — uncomment when ready:
-    // { id: 'newbaby', name: 'NEWbaby', file: 'apps/newbaby.html' },
-  ];
+  <script>
+    (function () {
+      // ============================================================
+      // APP MANIFEST — add new apps here. Order = order shown in bar.
+      // ============================================================
+      const APPS = [
+        { id: 'aifbaby', name: 'AIFbaby', file: 'apps/aifbaby.html' },
+        { id: 'wavbaby', name: 'WAVbaby', file: 'apps/wavbaby.html' },
+        { id: 'mp3baby', name: 'MP3baby', file: 'apps/mp3baby.html' },
+        { id: 'trimbaby', name: 'TRIMbaby', file: 'apps/trimbaby.html' },
+        { id: 'lufsbaby', name: 'LUFSbaby', file: 'apps/lufsbaby.html' },
+        { id: 'tapbaby', name: 'TAPbaby', file: 'apps/tapbaby.html' },
+        { id: 'keybaby', name: 'KEYbaby', file: 'apps/keybaby.html' },
+        { id: 'solbaby', name: 'SOLbaby', file: 'apps/solbaby.html' },
+        { id: 'savethatad', name: 'SaveThatAd', file: 'apps/savethatad.html' },
+        // Example placeholder for the 10th app — uncomment when ready:
+        // { id: 'newbaby', name: 'NEWbaby', file: 'apps/newbaby.html' },
+      ];
 
-  const DEFAULT_APP_ID = APPS[0].id;
-  const THEME_KEY = 'syncbeast-theme';
+      const DEFAULT_APP_ID = APPS[0].id;
+      const THEME_KEY = 'syncbeast-theme';
 
-  // Per-app theme keys used by the individual tools.
-  // The shell mirrors its theme into each of these so a freshly-loaded
-  // iframe picks up the right theme on startup with no flicker.
-  const PER_APP_THEME_KEYS = [
-    'aifbaby-theme',
-    'wavbaby-theme',
-    'mp3baby-theme',
-    'trimbaby-theme',
-    'lufs-theme',
-    'tap-theme',
-    'keybaby-theme',
-    'solbaby-theme',
-    'sta-theme',
-  ];
+      // Per-app theme keys used by the individual tools.
+      // The shell mirrors its theme into each of these so a freshly-loaded
+      // iframe picks up the right theme on startup with no flicker.
+      const PER_APP_THEME_KEYS = [
+        'aifbaby-theme',
+        'wavbaby-theme',
+        'mp3baby-theme',
+        'trimbaby-theme',
+        'lufs-theme',
+        'tap-theme',
+        'keybaby-theme',
+        'solbaby-theme',
+        'sta-theme',
+      ];
 
-  // ---------- DOM references ----------
-  // Resolved up front so functions defined below can close over them
-  // safely, even when called early during shell init.
-  const switcherEl   = document.getElementById('switcherApps');
-  const frameA       = document.getElementById('frameA');
-  const frameB       = document.getElementById('frameB');
-  const loadingHint  = document.getElementById('loadingHint');
-  const themeToggleBtn = document.getElementById('themeToggle');
+      // ---------- DOM references ----------
+      // Resolved up front so functions defined below can close over them
+      // safely, even when called early during shell init.
+      const switcherEl = document.getElementById('switcherApps');
+      const frameA = document.getElementById('frameA');
+      const frameB = document.getElementById('frameB');
+      const loadingHint = document.getElementById('loadingHint');
+      const themeToggleBtn = document.getElementById('themeToggle');
 
-  // ---------- Theme ----------
-  function readInitialTheme() {
-    try {
-      const stored = localStorage.getItem(THEME_KEY);
-      if (stored === 'dark' || stored === 'light') return stored;
-      for (const k of PER_APP_THEME_KEYS) {
-        const v = localStorage.getItem(k);
-        if (v === 'dark' || v === 'light') return v;
-      }
-    } catch (e) {}
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
-  }
-
-  function persistTheme(theme) {
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-      for (const k of PER_APP_THEME_KEYS) localStorage.setItem(k, theme);
-    } catch (e) {}
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    persistTheme(theme);
-    // Sync into both iframes if loaded
-    [frameA, frameB].forEach(syncThemeIntoFrame);
-  }
-
-  function syncThemeIntoFrame(iframe) {
-    try {
-      const doc = iframe.contentDocument;
-      if (doc && doc.documentElement) {
-        const t = document.documentElement.getAttribute('data-theme') || 'light';
-        doc.documentElement.setAttribute('data-theme', t);
-      }
-    } catch (e) {}
-  }
-
-  // Apply theme as early as possible to avoid flash on the shell itself
-  applyTheme(readInitialTheme());
-
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme') || 'light';
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
-  });
-
-  // ---------- Switcher render ----------
-  APPS.forEach((app) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'app-btn';
-    btn.textContent = app.name;
-    btn.setAttribute('data-app', app.id);
-    btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-label', app.name);
-    btn.addEventListener('click', () => navigateTo(app.id));
-    switcherEl.appendChild(btn);
-  });
-
-  // ---------- Routing ----------
-  function getAppIdFromHash() {
-    const raw = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
-    if (!raw) return null;
-    return APPS.some(a => a.id === raw) ? raw : null;
-  }
-
-  function setActiveButton(appId) {
-    [...switcherEl.children].forEach(btn => {
-      const isActive = btn.dataset.app === appId;
-      if (isActive) btn.setAttribute('aria-current', 'page');
-      else btn.removeAttribute('aria-current');
-      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
-  }
-
-  // ---------- Double-buffered iframe navigation ----------
-  // activeFrame: the iframe currently visible to the user.
-  // idleFrame: the iframe used to preload the next app off-screen.
-  // After load: swap roles. No flash because the old content stays visible
-  // until the new content has fully painted.
-  let activeFrame = frameA;
-  let idleFrame   = frameB;
-  let currentAppId = null;
-  let pendingAppId = null;
-  let loadingTimer = null;
-
-  function attachLoadHandler(iframe) {
-    iframe.addEventListener('load', () => {
-      // Ignore loads that aren't tied to a pending navigation (e.g. blank src)
-      if (!iframe.dataset.pendingApp) return;
-      const loadedAppId = iframe.dataset.pendingApp;
-      iframe.removeAttribute('data-pending-app');
-
-      // If the user clicked yet another app while this one was loading,
-      // ignore this load — the most recent navigation wins.
-      if (loadedAppId !== pendingAppId) return;
-
-      try {
-        const doc = iframe.contentDocument;
-        if (doc && doc.documentElement) {
-          // Lock theme to the shell's current theme
-          const theme = document.documentElement.getAttribute('data-theme') || 'light';
-          doc.documentElement.setAttribute('data-theme', theme);
-
-          // Hide the in-app theme toggle (the shell's toggle is the global one)
-          if (!doc.getElementById('__sb_hide_in_app_toggle')) {
-            const style = doc.createElement('style');
-            style.id = '__sb_hide_in_app_toggle';
-            style.textContent = '#themeToggle{display:none !important;}';
-            doc.head.appendChild(style);
+      // ---------- Theme ----------
+      function readInitialTheme() {
+        try {
+          const stored = localStorage.getItem(THEME_KEY);
+          if (stored === 'dark' || stored === 'light') return stored;
+          for (const k of PER_APP_THEME_KEYS) {
+            const v = localStorage.getItem(k);
+            if (v === 'dark' || v === 'light') return v;
           }
-
-          // Mirror in-iframe theme changes back to the shell, in case
-          // some in-app code path flips data-theme.
-          if (!doc.documentElement.__sbThemeObserver) {
-            const obs = new MutationObserver(() => {
-              const t = doc.documentElement.getAttribute('data-theme') || 'light';
-              if (t !== document.documentElement.getAttribute('data-theme')) {
-                applyTheme(t);
-              }
-            });
-            obs.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-            doc.documentElement.__sbThemeObserver = obs;
-          }
+        } catch (e) { }
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
         }
-      } catch (e) {
-        // Cross-origin, file://, etc. — skip silently.
+        return 'light';
       }
 
-      // Atomic swap: the newly-loaded iframe becomes active, the previous one
-      // becomes idle. CSS handles opacity/pointer-events via .is-active.
-      iframe.classList.add('is-active');
-      const previouslyActive = activeFrame;
-      if (previouslyActive !== iframe) {
-        previouslyActive.classList.remove('is-active');
+      function persistTheme(theme) {
+        try {
+          localStorage.setItem(THEME_KEY, theme);
+          for (const k of PER_APP_THEME_KEYS) localStorage.setItem(k, theme);
+        } catch (e) { }
       }
-      activeFrame = iframe;
-      idleFrame = previouslyActive;
-      currentAppId = loadedAppId;
-      pendingAppId = null;
 
-      // Hide loading hint
-      clearTimeout(loadingTimer);
-      loadingHint.classList.remove('visible');
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        persistTheme(theme);
+        // Sync into both iframes if loaded
+        [frameA, frameB].forEach(syncThemeIntoFrame);
+      }
 
-      // Park the now-idle iframe on a blank page so its scripts/audio
-      // contexts don't keep running in the background. We do this AFTER
-      // the swap so there's no flash of the now-idle frame.
-      if (idleFrame !== activeFrame && idleFrame.src && idleFrame.src !== 'about:blank') {
-        // Defer the blank to the next tick so the swap paints first.
-        setTimeout(() => {
-          // Only blank it if no new navigation has claimed this frame in the meantime.
-          if (!idleFrame.dataset.pendingApp) {
-            try { idleFrame.src = 'about:blank'; } catch (e) {}
+      function syncThemeIntoFrame(iframe) {
+        try {
+          const doc = iframe.contentDocument;
+          if (doc && doc.documentElement) {
+            const t = document.documentElement.getAttribute('data-theme') || 'light';
+            doc.documentElement.setAttribute('data-theme', t);
           }
-        }, 50);
+        } catch (e) { }
       }
-    });
-  }
-  attachLoadHandler(frameA);
-  attachLoadHandler(frameB);
 
-  function navigateTo(appId, opts = {}) {
-    const app = APPS.find(a => a.id === appId);
-    if (!app) return;
-    if (appId === currentAppId && !opts.force) {
-      // Still update hash/title in case we got here from an empty initial state
-      updateUrl(appId, opts);
-      return;
-    }
+      // Apply theme as early as possible to avoid flash on the shell itself
+      applyTheme(readInitialTheme());
 
-    pendingAppId = appId;
-    setActiveButton(appId);
-    updateUrl(appId, opts);
-    document.title = app.name + ' · SyncBeast';
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      });
 
-    // Show loading hint after a short delay (avoid flicker for fast loads)
-    clearTimeout(loadingTimer);
-    loadingTimer = setTimeout(() => loadingHint.classList.add('visible'), 400);
+      // ---------- Switcher render ----------
+      APPS.forEach((app) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'app-btn';
+        btn.textContent = app.name;
+        btn.setAttribute('data-app', app.id);
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-label', app.name);
+        btn.addEventListener('click', () => navigateTo(app.id));
+        switcherEl.appendChild(btn);
+      });
 
-    // Load into the idle iframe (which is currently invisible).
-    // The active iframe stays visible until the load completes and we swap.
-    idleFrame.dataset.pendingApp = appId;
-    idleFrame.src = app.file;
-  }
+      // ---------- Routing ----------
+      function getAppIdFromHash() {
+        const raw = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
+        if (!raw) return null;
+        return APPS.some(a => a.id === raw) ? raw : null;
+      }
 
-  function updateUrl(appId, opts) {
-    const desiredHash = '#/' + appId;
-    if (window.location.hash === desiredHash) return;
-    if (opts.fromHash) return; // already in the URL, don't double-push
-    if (opts.initial) {
-      history.replaceState(null, '', desiredHash);
-    } else {
-      history.pushState(null, '', desiredHash);
-    }
-  }
+      function setActiveButton(appId) {
+        [...switcherEl.children].forEach(btn => {
+          const isActive = btn.dataset.app === appId;
+          if (isActive) btn.setAttribute('aria-current', 'page');
+          else btn.removeAttribute('aria-current');
+          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+      }
 
-  // ---------- Browser back/forward ----------
-  window.addEventListener('hashchange', () => {
-    const id = getAppIdFromHash() || DEFAULT_APP_ID;
-    if (id !== currentAppId) navigateTo(id, { fromHash: true });
-  });
+      // ---------- Double-buffered iframe navigation ----------
+      // activeFrame: the iframe currently visible to the user.
+      // idleFrame: the iframe used to preload the next app off-screen.
+      // After load: swap roles. No flash because the old content stays visible
+      // until the new content has fully painted.
+      let activeFrame = frameA;
+      let idleFrame = frameB;
+      let currentAppId = null;
+      let pendingAppId = null;
+      let loadingTimer = null;
 
-  // ---------- Initial load ----------
-  const startId = getAppIdFromHash() || DEFAULT_APP_ID;
-  navigateTo(startId, { initial: true });
-})();
-</script>
+      function attachLoadHandler(iframe) {
+        iframe.addEventListener('load', () => {
+          // Ignore loads that aren't tied to a pending navigation (e.g. blank src)
+          if (!iframe.dataset.pendingApp) return;
+          const loadedAppId = iframe.dataset.pendingApp;
+          iframe.removeAttribute('data-pending-app');
+
+          // If the user clicked yet another app while this one was loading,
+          // ignore this load — the most recent navigation wins.
+          if (loadedAppId !== pendingAppId) return;
+
+          try {
+            const doc = iframe.contentDocument;
+            if (doc && doc.documentElement) {
+              // Lock theme to the shell's current theme
+              const theme = document.documentElement.getAttribute('data-theme') || 'light';
+              doc.documentElement.setAttribute('data-theme', theme);
+
+              // Hide the in-app theme toggle (the shell's toggle is the global one)
+              if (!doc.getElementById('__sb_hide_in_app_toggle')) {
+                const style = doc.createElement('style');
+                style.id = '__sb_hide_in_app_toggle';
+                style.textContent = '#themeToggle{display:none !important;}';
+                doc.head.appendChild(style);
+              }
+
+              // Mirror in-iframe theme changes back to the shell, in case
+              // some in-app code path flips data-theme.
+              if (!doc.documentElement.__sbThemeObserver) {
+                const obs = new MutationObserver(() => {
+                  const t = doc.documentElement.getAttribute('data-theme') || 'light';
+                  if (t !== document.documentElement.getAttribute('data-theme')) {
+                    applyTheme(t);
+                  }
+                });
+                obs.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+                doc.documentElement.__sbThemeObserver = obs;
+              }
+            }
+          } catch (e) {
+            // Cross-origin, file://, etc. — skip silently.
+          }
+
+          // Atomic swap: the newly-loaded iframe becomes active, the previous one
+          // becomes idle. CSS handles opacity/pointer-events via .is-active.
+          iframe.classList.add('is-active');
+          const previouslyActive = activeFrame;
+          if (previouslyActive !== iframe) {
+            previouslyActive.classList.remove('is-active');
+          }
+          activeFrame = iframe;
+          idleFrame = previouslyActive;
+          currentAppId = loadedAppId;
+          pendingAppId = null;
+
+          // Hide loading hint
+          clearTimeout(loadingTimer);
+          loadingHint.classList.remove('visible');
+
+          // Park the now-idle iframe on a blank page so its scripts/audio
+          // contexts don't keep running in the background. We do this AFTER
+          // the swap so there's no flash of the now-idle frame.
+          if (idleFrame !== activeFrame && idleFrame.src && idleFrame.src !== 'about:blank') {
+            // Defer the blank to the next tick so the swap paints first.
+            setTimeout(() => {
+              // Only blank it if no new navigation has claimed this frame in the meantime.
+              if (!idleFrame.dataset.pendingApp) {
+                try { idleFrame.src = 'about:blank'; } catch (e) { }
+              }
+            }, 50);
+          }
+        });
+      }
+      attachLoadHandler(frameA);
+      attachLoadHandler(frameB);
+
+      function navigateTo(appId, opts = {}) {
+        const app = APPS.find(a => a.id === appId);
+        if (!app) return;
+        if (appId === currentAppId && !opts.force) {
+          // Still update hash/title in case we got here from an empty initial state
+          updateUrl(appId, opts);
+          return;
+        }
+
+        pendingAppId = appId;
+        setActiveButton(appId);
+        updateUrl(appId, opts);
+        document.title = app.name + ' · SyncBeast';
+
+        // Show loading hint after a short delay (avoid flicker for fast loads)
+        clearTimeout(loadingTimer);
+        loadingTimer = setTimeout(() => loadingHint.classList.add('visible'), 400);
+
+        // Load into the idle iframe (which is currently invisible).
+        // The active iframe stays visible until the load completes and we swap.
+        idleFrame.dataset.pendingApp = appId;
+        idleFrame.src = app.file;
+      }
+
+      function updateUrl(appId, opts) {
+        const desiredHash = '#/' + appId;
+        if (window.location.hash === desiredHash) return;
+        if (opts.fromHash) return; // already in the URL, don't double-push
+        if (opts.initial) {
+          history.replaceState(null, '', desiredHash);
+        } else {
+          history.pushState(null, '', desiredHash);
+        }
+      }
+
+      // ---------- Browser back/forward ----------
+      window.addEventListener('hashchange', () => {
+        const id = getAppIdFromHash() || DEFAULT_APP_ID;
+        if (id !== currentAppId) navigateTo(id, { fromHash: true });
+      });
+
+      // ---------- Initial load ----------
+      const startId = getAppIdFromHash() || DEFAULT_APP_ID;
+      navigateTo(startId, { initial: true });
+    })();
+  </script>
 </body>
+
 </html>
