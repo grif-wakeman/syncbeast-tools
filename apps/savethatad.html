@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="origin-when-cross-origin">
+<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<title>SaveThatAd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f3ef;
+    --panel: #ebe8e2;
+    --panel-2: #e0ddd6;
+    --ink: #222;
+    --dim: #777;
+    --dimmer: #aaa;
+    --line: #d4d1c9;
+    --warn: #9a3520;
+    --ok: #2a6f4a;
+    --accent: #2a6f4a;
+    --tooltip-bg: #222;
+    --tooltip-ink: #f5f3ef;
+    --input-bg: #fff;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121212;
+    --panel: #1c1c1c;
+    --panel-2: #242424;
+    --ink: #e8e8e8;
+    --dim: #888;
+    --dimmer: #555;
+    --line: #2e2e2e;
+    --warn: #e5634a;
+    --ok: #8ace00;
+    --accent: #8ace00;
+    --tooltip-bg: #e8e8e8;
+    --tooltip-ink: #121212;
+    --input-bg: #0d0d0d;
+  }
+  html { background: var(--bg); min-height: 100%; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  body { padding: 1.5rem 1.25rem 3rem; }
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+    gap: 1rem;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  h1 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .tag { font-size: 0.7rem; color: var(--dim); }
+  .theme-toggle {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s;
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+    color: var(--ink);
+  }
+  .theme-toggle:hover { border-color: var(--ink); }
+  .theme-toggle .tm-arrow { color: var(--dim); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
+  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
+
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    margin-bottom: 0.75rem;
+  }
+  .section-head {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-body { padding: 0.75rem; }
+
+  .info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: var(--dim);
+    cursor: help;
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .info svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .info svg .info-ring { stroke: currentColor; }
+  .info svg .info-dot,
+  .info svg .info-stem { fill: currentColor; }
+  .info:hover, .info.open { color: var(--ink); }
+  .info-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-width: calc(100vw - 2.5rem);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-ink);
+    border: 1px solid var(--tooltip-bg);
+    padding: 0.6rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    z-index: 10;
+    display: none;
+    text-align: left;
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  @media (hover: hover) {
+    .info:hover .info-panel { display: block; }
+  }
+  .info.open .info-panel { display: block; }
+  .info-panel ol { padding-left: 1.1rem; }
+  .info-panel li { margin-bottom: 0.25rem; }
+  .info-panel li:last-child { margin-bottom: 0; }
+
+  /* Steps list (main how-to) */
+  .steps {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    counter-reset: step;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    align-items: baseline;
+    gap: 0.25rem;
+    counter-increment: step;
+  }
+  .steps li::before {
+    content: counter(step) ".";
+    color: var(--dim);
+    font-weight: 500;
+  }
+
+  /* Paste input */
+  .paste-wrap { margin-top: 0.75rem; }
+  textarea#paste-field {
+    width: 100%;
+    background: var(--input-bg);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 0.6rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 3.25rem;
+    transition: border-color 0.15s;
+  }
+  textarea#paste-field:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  textarea#paste-field::placeholder { color: var(--dim); }
+
+  /* When a result is shown, the How-to-use section steps back entirely. */
+  #how-section.hidden { display: none; }
+
+  /* Status line below the field (error + hint states) */
+  .status {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--dim);
+    min-height: 1em;
+  }
+  .status.err { color: var(--warn); }
+  .status.ok { color: var(--ok); font-weight: 500; }
+
+  /* Result (link + embed) */
+  .result { margin-top: 1.25rem; display: none; }
+  .result.show { display: block; }
+
+  .yt-link-hero {
+    display: block;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .yt-link-hero:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .link-sub {
+    margin-top: 0.4rem;
+    font-size: 0.65rem;
+    color: var(--dim);
+  }
+
+  .embed-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+  }
+  .embed-wrap iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .reset {
+    margin-top: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    padding: 0.4rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .reset:hover { color: var(--ink); border-color: var(--ink); }
+
+  footer {
+    margin-top: 1.5rem;
+    font-size: 0.65rem;
+    color: var(--dim);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .info.info-footer-word {
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    font-family: inherit;
+    font-style: normal;
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--dim);
+    padding: 0;
+    background: none;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    border-bottom: 1px dotted var(--dimmer);
+  }
+  .info.info-footer-word:hover,
+  .info.info-footer-word.open {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .info-panel-footer {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 8px);
+    top: auto;
+    width: 300px;
+    max-width: calc(100vw - 2rem);
+  }
+  .privacy-head {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+  }
+  .info-panel-footer p {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+  }
+  .info-panel-footer p:last-child { margin-bottom: 0; }
+  @media (max-width: 500px) {
+    .info-panel-footer {
+      position: fixed;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      top: auto;
+      transform: none;
+      width: auto;
+      max-width: none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SaveThatAd</h1>
+    <div class="header-right">
+      <div class="tag">No ref left behind</div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+    </div>
+  </header>
+
+  <div class="section" id="how-section">
+    <div class="section-head">
+      <span>How to use</span>
+    </div>
+    <div class="section-body">
+      <ol class="steps">
+        <li>Right-click on the YouTube ad while it's playing</li>
+        <li>Select "Copy Debug Info"</li>
+        <li>Paste below</li>
+      </ol>
+      <div class="paste-wrap" id="paste-wrap">
+        <textarea id="paste-field" placeholder="Paste here" rows="2" autocomplete="off" spellcheck="false"></textarea>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="section">
+      <div class="section-head">
+        <span>Ad link</span>
+      </div>
+      <div class="section-body">
+        <a class="yt-link-hero" id="yt-link" href="" target="_blank" rel="noopener">—</a>
+        <div class="link-sub">Opens on YouTube in a new tab.</div>
+      </div>
+    </div>
+
+    <div class="section" id="preview-section">
+      <div class="section-head">
+        <span>Preview</span>
+        <button class="info" type="button" id="previewInfo" aria-label="About preview" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
+          <p>Some ads block in-browser preview. If the player won't start, use the link above to open the ad directly on YouTube.</p>
+        </span></button>
+      </div>
+      <div class="section-body">
+        <div class="embed-wrap">
+          <iframe id="embed" src="" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <button class="reset" id="reset">Save another ad</button>
+  </div>
+
+  <footer>
+    <span>© Sync Beast LLC ·</span>
+    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+      <div class="privacy-head">Your data stays on your device.</div>
+      <p>Everything happens inside your browser. Nothing is uploaded, stored, or retained by us. No servers, no analytics, no third parties.</p>
+      <p>Once you close the tab, it's gone.</p>
+    </span></button>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// Theme toggle (identical pattern to LUFSbaby)
+// ============================================================
+(function initTheme() {
+  const saved = (() => {
+    try { return localStorage.getItem('sta-theme'); } catch (e) { return null; }
+  })();
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('sta-theme', next); } catch (e) {}
+    });
+  }
+
+  // Info tooltips: click-to-toggle, tap-outside or Escape to close.
+  const infos = document.querySelectorAll('.info');
+  const closeAll = () => {
+    infos.forEach(el => {
+      el.classList.remove('open');
+      el.setAttribute('aria-expanded', 'false');
+    });
+  };
+  infos.forEach(info => {
+    info.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = info.classList.contains('open');
+      closeAll();
+      if (!wasOpen) {
+        info.classList.add('open');
+        info.setAttribute('aria-expanded', 'true');
+      }
+    });
+    const panel = info.querySelector('.info-panel');
+    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+});
+
+// ============================================================
+// SaveThatAd logic
+// ============================================================
+const pasteField = document.getElementById('paste-field');
+const pasteWrap  = document.getElementById('paste-wrap');
+const howSection = document.getElementById('how-section');
+const statusEl   = document.getElementById('status');
+const resultEl   = document.getElementById('result');
+const ytLink     = document.getElementById('yt-link');
+const embed      = document.getElementById('embed');
+const resetBtn   = document.getElementById('reset');
+
+function setStatus(msg, kind = '') {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+function clearResult() {
+  resultEl.classList.remove('show');
+  ytLink.textContent = '—';
+  ytLink.href = '';
+  embed.src = '';
+  howSection.classList.remove('hidden');
+}
+
+function showResult(videoId) {
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  ytLink.textContent = url;
+  ytLink.href = url;
+  // Match the embed approach used by the original SaveThatAd: plain
+  // youtube.com/embed with no params. Nocookie + autoplay params trigger
+  // Error 153 (player config error) on non-allowlisted domains.
+  embed.src = `https://www.youtube.com/embed/${videoId}`;
+  resultEl.classList.add('show');
+  // Step out of paste mode entirely — the How-to-use section retreats and
+  // the result section becomes the focus.
+  howSection.classList.add('hidden');
+}
+
+// Parse plist-style "key = value;" pairs (the format older YT Debug Info uses).
+function getValuesFromPlist(plistData, keys) {
+  if (!plistData || typeof plistData !== 'string') return null;
+  const results = {};
+  keys.forEach((key) => {
+    const regex = new RegExp(`${key}\\s*=\\s*([^;]+);`);
+    const match = plistData.match(regex);
+    if (match) {
+      let value = match[1].trim();
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      }
+      results[key] = value;
+    } else {
+      results[key] = null;
+    }
+  });
+  return results;
+}
+
+// Look up the first non-empty value across a list of possible field names.
+function pickFirst(obj, keys) {
+  for (const k of keys) {
+    const v = obj && obj[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+function processPasted(pastedText) {
+  if (!pastedText || !pastedText.trim()) {
+    clearResult();
+    setStatus('');
+    return;
+  }
+
+  let videoId = null;
+
+  // Path 1: JSON format (modern + legacy). Walks a priority list of known
+  // fields so the tool keeps working as YouTube renames things.
+  try {
+    const jsonData = JSON.parse(pastedText);
+    if (jsonData && typeof jsonData === 'object') {
+      // Legacy ad marker — most reliable when present.
+      videoId = pickFirst(jsonData, ['addebug_videoId']);
+
+      // Modern formats: docid and debug_videoId are the current ad video ID
+      // carriers. They typically match each other.
+      if (!videoId) {
+        videoId = pickFirst(jsonData, ['docid', 'debug_videoId']);
+      }
+    }
+  } catch (e) {
+    // Not JSON — fall through to plist parser.
+  }
+
+  // Path 2: Plist format (older clients). docid != videoID is the classic
+  // ad signature; otherwise fall back to whichever ID is present.
+  if (!videoId) {
+    const values = getValuesFromPlist(pastedText, ['docid', 'videoID', 'debug_videoId']);
+    if (values) {
+      if (values.docid && values.videoID && values.docid !== values.videoID) {
+        videoId = values.docid;
+      } else {
+        videoId = values.docid || values.debug_videoId || values.videoID || null;
+      }
+    }
+  }
+
+  if (videoId) {
+    setStatus('');
+    showResult(videoId);
+  } else {
+    clearResult();
+    setStatus('That doesn\u2019t look like the right info. Try copying again.', 'err');
+  }
+}
+
+pasteField.addEventListener('paste', (event) => {
+  event.preventDefault();
+  const clipboardData = event.clipboardData || window.clipboardData;
+  const pastedText = clipboardData.getData('text');
+  pasteField.value = pastedText;
+  processPasted(pastedText);
+});
+
+// Backup path for mobile/edge cases where 'paste' doesn't fire.
+pasteField.addEventListener('input', () => {
+  processPasted(pasteField.value);
+});
+
+resetBtn.addEventListener('click', () => {
+  pasteField.value = '';
+  clearResult();
+  setStatus('');
+  pasteField.focus();
+});
+</script>
+</body>
+</html>

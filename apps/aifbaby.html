@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<title>AIFbaby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f3ef;
+    --panel: #ebe8e2;
+    --panel-2: #e0ddd6;
+    --ink: #222;
+    --dim: #777;
+    --dimmer: #aaa;
+    --line: #d4d1c9;
+    --warn: #9a3520;
+    --ok: #2a6f4a;
+    --accent: #2a6f4a;
+    --tooltip-bg: #222;
+    --tooltip-ink: #f5f3ef;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121212;
+    --panel: #1c1c1c;
+    --panel-2: #242424;
+    --ink: #e8e8e8;
+    --dim: #888;
+    --dimmer: #555;
+    --line: #2e2e2e;
+    --warn: #e5634a;
+    --ok: #8ace00;
+    --accent: #8ace00;
+    --tooltip-bg: #e8e8e8;
+    --tooltip-ink: #121212;
+  }
+  html { transition: background 0.2s; background: var(--bg); min-height: 100%; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  body { padding: 1.5rem 1.25rem 3rem; }
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+    gap: 1rem;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  h1 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .tag { font-size: 0.7rem; color: var(--dim); }
+  .theme-toggle {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s;
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+    color: var(--ink);
+  }
+  .theme-toggle:hover { border-color: var(--ink); }
+  .theme-toggle .tm-arrow { color: var(--dim); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
+  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
+  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
+  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
+
+  .spec-toggle {
+    display: inline-flex;
+    line-height: 1;
+  }
+  .spec-opt {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--dim);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+    position: relative;
+    min-width: 2.25rem; /* keeps "16" and "44.1" feeling balanced despite different widths */
+    text-align: center;
+  }
+  .spec-opt + .spec-opt { margin-left: -1px; } /* overlap shared seam */
+  /* Boundary between bit-depth pair and sample-rate pair: small visual gap
+     so users see two independent toggles, not one four-way picker. */
+  .spec-opt[data-group="sr"]:first-of-type,
+  .spec-opt[data-group="bd"] + .spec-opt[data-group="sr"] {
+    margin-left: 0.4rem;
+  }
+  .spec-opt[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--panel-2);
+    font-weight: 700;
+    z-index: 1;
+  }
+  .spec-opt:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    z-index: 2;
+  }
+
+  .drop {
+    border: 1px dashed var(--dimmer);
+    background: var(--panel);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    display: block;
+  }
+  .drop:hover, .drop.hover {
+    background: var(--panel-2);
+    border-color: var(--ink);
+  }
+  .drop-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
+  .drop-sub { font-size: 0.7rem; color: var(--dim); }
+  .drop input { display: none; }
+
+  .status {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--dim);
+    min-height: 1em;
+  }
+  .status.err { color: var(--warn); }
+
+  .queue { margin-top: 1.25rem; display: none; }
+  .queue.show { display: block; }
+
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    margin-bottom: 0.75rem;
+  }
+  .section-head {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: var(--dim);
+    cursor: help;
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .info svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .info svg .info-ring { stroke: currentColor; }
+  .info svg .info-dot,
+  .info svg .info-stem { fill: currentColor; }
+  .info:hover, .info.open { color: var(--ink); }
+  .info-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-width: calc(100vw - 2.5rem);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-ink);
+    border: 1px solid var(--tooltip-bg);
+    padding: 0.6rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    z-index: 10;
+    display: none;
+    text-align: left;
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  @media (hover: hover) {
+    .info:hover .info-panel { display: block; }
+  }
+  .info.open .info-panel { display: block; }
+  .info-panel p {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+  }
+  .info-panel p:last-child { margin-bottom: 0; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: none; }
+  .row-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    word-break: break-all;
+    min-width: 0;
+  }
+  .row-state {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  .row-state.ok { color: var(--ok); font-weight: 700; }
+  .row-state.err { color: var(--warn); font-weight: 700; }
+  .row-state.active { color: var(--ink); }
+  .row-bar {
+    grid-column: 1 / -1;
+    position: relative;
+    height: 4px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .row-bar-fill {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.15s linear;
+  }
+  .row-bar.done .row-bar-fill { width: 100% !important; }
+  .row-bar.err .row-bar-fill { background: var(--warn); width: 100% !important; }
+
+  .summary {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+    color: var(--dim);
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .summary .count-done { color: var(--ink); font-weight: 500; }
+
+  .reset {
+    margin-top: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--dim);
+    padding: 0.4rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .reset:hover { color: var(--ink); border-color: var(--ink); }
+  .reset:disabled { opacity: 0.5; cursor: not-allowed; }
+  .reset:disabled:hover { color: var(--dim); border-color: var(--line); }
+
+  footer {
+    margin-top: 1.5rem;
+    font-size: 0.65rem;
+    color: var(--dim);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .info.info-footer-word {
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    font-family: inherit;
+    font-style: normal;
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--dim);
+    padding: 0;
+    background: none;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    border-bottom: 1px dotted var(--dimmer);
+  }
+  .info.info-footer-word:hover,
+  .info.info-footer-word.open {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .info-panel-footer {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 8px);
+    top: auto;
+    width: 300px;
+    max-width: calc(100vw - 2rem);
+  }
+  .privacy-head {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+  }
+  @media (max-width: 500px) {
+    .info-panel-footer {
+      position: fixed;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      top: auto;
+      transform: none;
+      width: auto;
+      max-width: none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AIFbaby</h1>
+    <div class="header-right">
+      <div class="spec-toggle" role="group" aria-label="Output format">
+        <button type="button" class="spec-opt" data-group="bd" data-value="16" aria-pressed="false">16</button>
+        <button type="button" class="spec-opt" data-group="bd" data-value="24" aria-pressed="true">24</button>
+        <button type="button" class="spec-opt" data-group="sr" data-value="44100" aria-pressed="false">44.1</button>
+        <button type="button" class="spec-opt" data-group="sr" data-value="48000" aria-pressed="true">48</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+    </div>
+  </header>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg,.webm,.opus" multiple>
+    <div class="drop-title">Drop audio files here, or click to select</div>
+    <div class="drop-sub">M4A · MP3 · WAV · FLAC · OGG · AIF → PCM AIF</div>
+  </label>
+
+  <div class="status" id="status"></div>
+
+  <div class="queue" id="queue">
+    <div class="section">
+      <div class="section-head">
+        <span>Queue</span>
+        <button class="info" type="button" id="queueInfo" aria-label="About conversion" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
+          <p>Channel count is preserved. Bit depth and sample rate follow the toggles in the header — files are resampled when the chosen rate differs from the source.</p>
+          <p>Your browser may ask permission on the first multi-file batch. Allow it so every file downloads.</p>
+        </span></button>
+      </div>
+      <div id="rows"></div>
+      <div class="summary" id="summary">
+        <span><span class="count-done" id="countDone">0</span> <span id="countLabel">of 0 done</span></span>
+        <span id="summaryRight"></span>
+      </div>
+    </div>
+
+    <button class="reset" id="reset">Clear queue</button>
+  </div>
+
+  <footer>
+    <span>© Sync Beast LLC ·</span>
+    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+      <div class="privacy-head">Your audio stays on your device.</div>
+      <p>AIFbaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
+      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
+    </span></button>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// Theme toggle
+// ============================================================
+(function initTheme() {
+  const saved = (() => {
+    try { return localStorage.getItem('aifbaby-theme'); } catch (e) { return null; }
+  })();
+  // Inherit theme from sibling tools (WAVbaby, MP3baby, LUFSbaby) so the family feels unified
+  const wavSaved = (() => {
+    try { return localStorage.getItem('wavbaby-theme'); } catch (e) { return null; }
+  })();
+  const mp3Saved = (() => {
+    try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+  })();
+  const lufsSaved = (() => {
+    try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+  })();
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || wavSaved || mp3Saved || lufsSaved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('aifbaby-theme', next); } catch (e) {}
+    });
+  }
+
+  // Spec toggles (bit depth + sample rate) — restore from localStorage, defaults: 24-bit, 48k
+  const savedBd = (() => {
+    try { return localStorage.getItem('aifbaby-bitdepth'); } catch (e) { return null; }
+  })();
+  if (savedBd === '16' || savedBd === '24') {
+    bitDepth = parseInt(savedBd, 10);
+  }
+  const savedSr = (() => {
+    try { return localStorage.getItem('aifbaby-samplerate'); } catch (e) { return null; }
+  })();
+  if (savedSr === '44100' || savedSr === '48000') {
+    sampleRate = parseInt(savedSr, 10);
+  }
+
+  const specOpts = document.querySelectorAll('.spec-opt');
+  const syncSpecUI = () => {
+    specOpts.forEach(el => {
+      const group = el.dataset.group;
+      const val = parseInt(el.dataset.value, 10);
+      const active = (group === 'bd' && val === bitDepth) ||
+                     (group === 'sr' && val === sampleRate);
+      el.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  };
+  syncSpecUI();
+  specOpts.forEach(el => {
+    el.addEventListener('click', () => {
+      // Don't allow swapping mid-batch — would produce inconsistent files
+      if (state.processing) return;
+      const group = el.dataset.group;
+      const val = parseInt(el.dataset.value, 10);
+      if (group === 'bd') {
+        bitDepth = val;
+        try { localStorage.setItem('aifbaby-bitdepth', String(val)); } catch (e) {}
+      } else if (group === 'sr') {
+        sampleRate = val;
+        try { localStorage.setItem('aifbaby-samplerate', String(val)); } catch (e) {}
+      }
+      syncSpecUI();
+    });
+  });
+
+  // Info tooltips
+  const infos = document.querySelectorAll('.info');
+  const closeAll = () => {
+    infos.forEach(el => {
+      el.classList.remove('open');
+      el.setAttribute('aria-expanded', 'false');
+    });
+  };
+  infos.forEach(info => {
+    info.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = info.classList.contains('open');
+      closeAll();
+      if (!wasOpen) {
+        info.classList.add('open');
+        info.setAttribute('aria-expanded', 'true');
+      }
+    });
+    const panel = info.querySelector('.info-panel');
+    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+});
+
+// ============================================================
+// Drop zone + file intake
+// ============================================================
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+const status = document.getElementById('status');
+const queue = document.getElementById('queue');
+const rowsEl = document.getElementById('rows');
+const countDoneEl = document.getElementById('countDone');
+const countLabelEl = document.getElementById('countLabel');
+const summaryRightEl = document.getElementById('summaryRight');
+const resetBtn = document.getElementById('reset');
+
+['dragenter', 'dragover'].forEach(evt => {
+  drop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    drop.classList.add('hover');
+  });
+});
+['dragleave', 'drop'].forEach(evt => {
+  drop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    drop.classList.remove('hover');
+  });
+});
+drop.addEventListener('drop', (e) => {
+  const files = Array.from(e.dataTransfer.files || []);
+  if (files.length) addFiles(files);
+});
+fileInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files || []);
+  if (files.length) addFiles(files);
+  // Clear the input so the same filename can be dropped again after a reset
+  fileInput.value = '';
+});
+resetBtn.addEventListener('click', () => {
+  if (state.processing) return;
+  state.items = [];
+  rowsEl.innerHTML = '';
+  queue.classList.remove('show');
+  setStatus('');
+  updateSummary();
+});
+
+function setStatus(msg, kind = '') {
+  status.textContent = msg;
+  status.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+// ============================================================
+// State & queue
+// ============================================================
+const state = {
+  items: [],      // { id, file, rowEl, barEl, stateEl, status: 'pending'|'active'|'done'|'err' }
+  processing: false,
+};
+let nextId = 0;
+let bitDepth = 24;       // 16 or 24 — header toggle, persisted to localStorage
+let sampleRate = 48000;  // 44100 or 48000 — header toggle, persisted to localStorage
+
+function addFiles(files) {
+  const accepted = files.filter(f => isAudioFile(f));
+  const rejected = files.length - accepted.length;
+  if (rejected > 0) {
+    setStatus(rejected + ' file' + (rejected === 1 ? '' : 's') + ' skipped — not audio.', 'err');
+  } else {
+    setStatus('');
+  }
+  for (const f of accepted) enqueue(f);
+  queue.classList.add('show');
+  updateSummary();
+  pump();
+}
+
+function isAudioFile(f) {
+  if (f.type && f.type.startsWith('audio/')) return true;
+  const n = (f.name || '').toLowerCase();
+  return /\.(m4a|mp3|wav|aif|aiff|flac|ogg|oga|opus|webm|mp4|aac)$/.test(n);
+}
+
+function enqueue(file) {
+  const id = ++nextId;
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div class="row-name"></div>
+    <div class="row-state">queued</div>
+    <div class="row-bar"><div class="row-bar-fill"></div></div>
+  `;
+  row.querySelector('.row-name').textContent = file.name;
+  rowsEl.appendChild(row);
+
+  state.items.push({
+    id,
+    file,
+    rowEl: row,
+    barEl: row.querySelector('.row-bar'),
+    barFillEl: row.querySelector('.row-bar-fill'),
+    stateEl: row.querySelector('.row-state'),
+    status: 'pending',
+  });
+}
+
+function updateSummary() {
+  const total = state.items.length;
+  const done = state.items.filter(i => i.status === 'done').length;
+  const err = state.items.filter(i => i.status === 'err').length;
+  countDoneEl.textContent = done;
+  countLabelEl.textContent = 'of ' + total + ' done';
+  summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
+  resetBtn.disabled = state.processing;
+}
+
+// ============================================================
+// Processing pump — serial, so the browser doesn't choke on
+// parallel encodes and downloads feel orderly
+// ============================================================
+async function pump() {
+  if (state.processing) return;
+  state.processing = true;
+  updateSummary();
+
+  while (true) {
+    const next = state.items.find(i => i.status === 'pending');
+    if (!next) break;
+    await processItem(next);
+    updateSummary();
+  }
+
+  state.processing = false;
+  updateSummary();
+  setStatus('');
+}
+
+async function processItem(item) {
+  item.status = 'active';
+  item.stateEl.textContent = 'decoding';
+  item.stateEl.className = 'row-state active';
+  item.barFillEl.style.width = '2%';
+  setStatus('Processing ' + item.file.name + '…');
+
+  try {
+    // --- Decode ---
+    const arrayBuffer = await item.file.arrayBuffer();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) throw new Error('Web Audio not available in this browser.');
+    const audioCtx = new AudioCtx();
+    let audio;
+    try {
+      audio = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+    } catch (err) {
+      audioCtx.close();
+      throw new Error('Could not decode this file.');
+    }
+    audioCtx.close();
+    item.barFillEl.style.width = '20%';
+
+    // --- Encode ---
+    item.stateEl.textContent = 'encoding';
+    const aiffBlob = await encodeAiff(audio, (pct) => {
+      // Encoding spans 20% -> 95% of the bar
+      item.barFillEl.style.width = (20 + pct * 0.75) + '%';
+    });
+    item.barFillEl.style.width = '98%';
+
+    // --- Download ---
+    item.stateEl.textContent = 'saving';
+    const outName = swapExt(item.file.name, 'aif');
+    triggerDownload(aiffBlob, outName);
+
+    item.status = 'done';
+    item.barEl.classList.add('done');
+    item.stateEl.textContent = 'done';
+    item.stateEl.className = 'row-state ok';
+  } catch (err) {
+    console.error(err);
+    item.status = 'err';
+    item.barEl.classList.add('err');
+    item.stateEl.textContent = 'error';
+    item.stateEl.className = 'row-state err';
+    // Surface the error reason in the row name tooltip for recoverability
+    item.rowEl.querySelector('.row-name').title = err.message || 'Unknown error';
+  }
+}
+
+function swapExt(name, newExt) {
+  const dot = name.lastIndexOf('.');
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  return base + '.' + newExt;
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  // Clean up after the click has had a tick to register
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
+// ============================================================
+// AIFF encoding — 16-bit or 24-bit PCM, source channels
+// ============================================================
+//
+// AIFF is the Apple/SGI counterpart to WAV. Same uncompressed PCM samples,
+// but four important differences from a RIFF/WAVE file:
+//
+//   1. Container is "FORM" + form-type "AIFF" instead of "RIFF" + "WAVE".
+//   2. ALL multi-byte integers are BIG-ENDIAN (network byte order).
+//      WAV is little-endian. This applies to chunk sizes and to the
+//      sample data itself.
+//   3. Sample rate lives in a "COMM" chunk as an 80-bit IEEE 754
+//      extended-precision float (the old 68k/PowerPC 'long double').
+//      JavaScript has no native support for this; we synthesize the
+//      10 bytes by hand. For our two valid rates (44100, 48000) the
+//      mantissa is exact, so no rounding occurs.
+//   4. Audio data lives in an "SSND" chunk that has an 8-byte preamble
+//      (offset + blockSize, both uint32 BE, both zero for our purposes)
+//      before the interleaved PCM payload.
+//
+// Source channel count is preserved (mono stays mono, stereo stays stereo,
+// multichannel passes through). 24-bit AIFF samples are written as three
+// big-endian bytes per sample, two's complement (highest byte first).
+//
+// AIFF spec: https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/AIFF/AIFF.html
+
+// Linear-interpolation resampler. Cheap, fast, audibly imperfect on critical
+// material — fine for sync deliverables in most cases, but a mastering engineer
+// could potentially detect aliasing on bright transient content. If that ever
+// matters, swap this for a windowed-sinc implementation.
+function resampleChannel(input, srcRate, dstRate) {
+  if (srcRate === dstRate) return input;
+  const ratio = srcRate / dstRate;
+  const outLen = Math.round(input.length / ratio);
+  const out = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const srcIdx = i * ratio;
+    const i0 = Math.floor(srcIdx);
+    const i1 = Math.min(i0 + 1, input.length - 1);
+    const frac = srcIdx - i0;
+    out[i] = input[i0] * (1 - frac) + input[i1] * frac;
+  }
+  return out;
+}
+
+// Encode a positive integer sample rate as an 80-bit IEEE 754 extended-precision
+// float, returning a 10-byte Uint8Array in big-endian order.
+//
+// Layout: 1 sign bit | 15 exponent bits | 64 mantissa bits (with explicit leading 1).
+// For a positive integer N, we find the highest set bit (call it position E),
+// then:
+//   sign     = 0
+//   exponent = 16383 + E    (bias is 16383 for the 80-bit format)
+//   mantissa = N << (63 - E)   // shift so the leading 1 lands in bit 63
+//
+// We split the 64-bit mantissa into two 32-bit halves because JS bitwise ops
+// only work on 32-bit values.
+function writeExtendedFloat(rate) {
+  const bytes = new Uint8Array(10);
+  if (rate <= 0) return bytes; // shouldn't happen with our toggles
+
+  // Find position of highest set bit (0-based).
+  let n = rate;
+  let exp = 0;
+  while (n > 1) { n >>>= 1; exp++; }
+
+  const biasedExp = exp + 16383;
+  // Sign (0) in bit 15 of byte 0; top bits of biasedExp in low byte 0/1.
+  bytes[0] = (biasedExp >> 8) & 0x7F;
+  bytes[1] = biasedExp & 0xFF;
+
+  // Build the 64-bit mantissa with the leading 1 explicitly at bit 63.
+  // shift = 63 - exp. For rate=48000, exp=15, so shift=48 — meaning the
+  // mantissa lives entirely in the high 32 bits, low 32 bits are zero.
+  const shift = 63 - exp;
+  // Use BigInt for the shift since values can exceed 53 bits of safe integer.
+  const mantissa = BigInt(rate) << BigInt(shift);
+  const hi = Number((mantissa >> 32n) & 0xFFFFFFFFn);
+  const lo = Number(mantissa & 0xFFFFFFFFn);
+
+  bytes[2] = (hi >>> 24) & 0xFF;
+  bytes[3] = (hi >>> 16) & 0xFF;
+  bytes[4] = (hi >>> 8) & 0xFF;
+  bytes[5] = hi & 0xFF;
+  bytes[6] = (lo >>> 24) & 0xFF;
+  bytes[7] = (lo >>> 16) & 0xFF;
+  bytes[8] = (lo >>> 8) & 0xFF;
+  bytes[9] = lo & 0xFF;
+
+  return bytes;
+}
+
+async function encodeAiff(audio, onProgress) {
+  const srcRate = audio.sampleRate;
+  const outRate = sampleRate; // module-level, from header toggle
+  const nCh = audio.numberOfChannels;
+  const bits = bitDepth;                  // 16 or 24, from the header toggle
+  const bytesPerSample = bits / 8;        // 2 or 3
+
+  // Pull channel data; resample if the user-chosen rate differs from source.
+  const channels = [];
+  for (let c = 0; c < nCh; c++) {
+    let ch = audio.getChannelData(c);
+    if (srcRate !== outRate) {
+      ch = resampleChannel(ch, srcRate, outRate);
+    }
+    channels.push(ch);
+  }
+  // After resampling, all channels share the same length.
+  const totalSamples = channels[0].length;
+
+  // ----- Chunk sizes -----
+  // COMM chunk body: 2 (channels) + 4 (numSampleFrames) + 2 (bits) + 10 (rate) = 18 bytes
+  const commBodySize = 18;
+  // SSND chunk body: 4 (offset) + 4 (blockSize) + payload
+  const ssndPayloadSize = totalSamples * nCh * bytesPerSample;
+  const ssndBodySize = 8 + ssndPayloadSize;
+  // FORM body: 4 (form type "AIFF") + 8 (COMM header) + commBody + 8 (SSND header) + ssndBody
+  const formBodySize = 4 + (8 + commBodySize) + (8 + ssndBodySize);
+  // Total file: 8 (FORM header) + formBodySize
+  const totalBytes = 8 + formBodySize;
+
+  const buffer = new ArrayBuffer(totalBytes);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+
+  // ----- FORM header -----
+  writeAscii(view, 0, 'FORM');
+  view.setUint32(4, formBodySize, false); // big-endian
+  writeAscii(view, 8, 'AIFF');
+
+  // ----- COMM chunk -----
+  let pos = 12;
+  writeAscii(view, pos, 'COMM'); pos += 4;
+  view.setUint32(pos, commBodySize, false); pos += 4;     // BE
+  view.setInt16(pos, nCh, false); pos += 2;               // numChannels (BE, signed per spec)
+  view.setUint32(pos, totalSamples, false); pos += 4;     // numSampleFrames (BE)
+  view.setInt16(pos, bits, false); pos += 2;              // sampleSize (BE, signed per spec)
+  const rateBytes = writeExtendedFloat(outRate);
+  for (let i = 0; i < 10; i++) bytes[pos + i] = rateBytes[i];
+  pos += 10;
+
+  // ----- SSND chunk -----
+  writeAscii(view, pos, 'SSND'); pos += 4;
+  view.setUint32(pos, ssndBodySize, false); pos += 4;     // BE
+  view.setUint32(pos, 0, false); pos += 4;                // offset = 0
+  view.setUint32(pos, 0, false); pos += 4;                // blockSize = 0
+
+  // ----- Interleave + convert samples (BIG-ENDIAN) -----
+  // Yield to the event loop periodically so the UI stays responsive on long files.
+  // Process in chunks of ~64k frames.
+  const CHUNK = 65536;
+  let offset = pos;
+
+  // Scaling constants — asymmetric so -1.0 and +1.0 hit the int range edges exactly.
+  // 16-bit: -1.0 -> -32768, +1.0 -> 32767
+  // 24-bit: -1.0 -> -8388608, +1.0 -> 8388607
+  const POS_SCALE_16 = 0x7FFF;
+  const NEG_SCALE_16 = 0x8000;
+  const POS_SCALE_24 = 0x7FFFFF;
+  const NEG_SCALE_24 = 0x800000;
+
+  if (bits === 16) {
+    for (let start = 0; start < totalSamples; start += CHUNK) {
+      const end = Math.min(start + CHUNK, totalSamples);
+      for (let i = start; i < end; i++) {
+        for (let c = 0; c < nCh; c++) {
+          let s = channels[c][i];
+          if (s > 1) s = 1; else if (s < -1) s = -1;
+          const v = s < 0 ? Math.round(s * NEG_SCALE_16) : Math.round(s * POS_SCALE_16);
+          view.setInt16(offset, v, false); // big-endian — the AIFF difference
+          offset += 2;
+        }
+      }
+      if (onProgress) onProgress(end / totalSamples);
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise(r => setTimeout(r, 0));
+    }
+  } else {
+    // 24-bit: write three bytes per sample, BIG-ENDIAN, two's complement.
+    // Negative values are masked to 24 bits via (v & 0xFFFFFF) so the bytes
+    // carry the correct sign bits without us computing the complement by hand.
+    for (let start = 0; start < totalSamples; start += CHUNK) {
+      const end = Math.min(start + CHUNK, totalSamples);
+      for (let i = start; i < end; i++) {
+        for (let c = 0; c < nCh; c++) {
+          let s = channels[c][i];
+          if (s > 1) s = 1; else if (s < -1) s = -1;
+          let v = s < 0 ? Math.round(s * NEG_SCALE_24) : Math.round(s * POS_SCALE_24);
+          v = v & 0xFFFFFF; // mask to 24 bits, handles negative two's complement
+          // Big-endian: most significant byte first
+          bytes[offset]     = (v >>> 16) & 0xFF;
+          bytes[offset + 1] = (v >>> 8) & 0xFF;
+          bytes[offset + 2] = v & 0xFF;
+          offset += 3;
+        }
+      }
+      if (onProgress) onProgress(end / totalSamples);
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  if (onProgress) onProgress(1);
+  // Use a generic MIME type rather than 'audio/aiff'. Some browsers (Safari
+  // especially) override the .download filename when the MIME type implies
+  // a different conventional extension — that's why .aif was getting
+  // rewritten to .aiff. octet-stream tells the browser to leave it alone.
+  return new Blob([buffer], { type: 'application/octet-stream' });
+}
+
+function writeAscii(view, offset, str) {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
+</script>
+</body>
+</html>
