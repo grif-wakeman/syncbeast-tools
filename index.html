@@ -280,15 +280,16 @@
       // APP MANIFEST — add new apps here. Order = order shown in bar.
       // ============================================================
       const APPS = [
+        { id: 'lufsbaby', name: 'LUFSbaby', file: 'apps/lufsbaby.html' },
+        { id: 'savethatad', name: 'SaveThatAd', file: 'apps/savethatad.html' },
         { id: 'aifbaby', name: 'AIFbaby', file: 'apps/aifbaby.html' },
         { id: 'wavbaby', name: 'WAVbaby', file: 'apps/wavbaby.html' },
         { id: 'mp3baby', name: 'MP3baby', file: 'apps/mp3baby.html' },
-        { id: 'trimbaby', name: 'TRIMbaby', file: 'apps/trimbaby.html' },
-        { id: 'lufsbaby', name: 'LUFSbaby', file: 'apps/lufsbaby.html' },
         { id: 'tapbaby', name: 'TAPbaby', file: 'apps/tapbaby.html' },
         { id: 'keybaby', name: 'KEYbaby', file: 'apps/keybaby.html' },
+        { id: 'trimbaby', name: 'TRIMbaby', file: 'apps/trimbaby.html' },
+        { id: 'pepbaby', name: 'PEPbaby', file: 'apps/pepbaby.html' },
         { id: 'solbaby', name: 'SOLbaby', file: 'apps/solbaby.html' },
-        { id: 'savethatad', name: 'SaveThatAd', file: 'apps/savethatad.html' },
         // Example placeholder for the 10th app — uncomment when ready:
         // { id: 'newbaby', name: 'NEWbaby', file: 'apps/newbaby.html' },
       ];
@@ -300,15 +301,16 @@
       // The shell mirrors its theme into each of these so a freshly-loaded
       // iframe picks up the right theme on startup with no flicker.
       const PER_APP_THEME_KEYS = [
+        'lufs-theme',
+        'sta-theme',
         'aifbaby-theme',
         'wavbaby-theme',
         'mp3baby-theme',
-        'trimbaby-theme',
-        'lufs-theme',
         'tap-theme',
         'keybaby-theme',
+        'trimbaby-theme',
+        'pepbaby-theme',
         'solbaby-theme',
-        'sta-theme',
       ];
 
       // ---------- DOM references ----------

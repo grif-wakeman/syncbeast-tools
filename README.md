@@ -17,6 +17,7 @@ loaded into an iframe and runs untouched.
 /apps/tapbaby.html
 /apps/trimbaby.html
 /apps/wavbaby.html
+/apps/pepbaby.html
 ```
 
 No build step. No package.json. No dependencies. Just static HTML.
