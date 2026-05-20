@@ -156,6 +156,8 @@
       background: var(--panel);
       border: 1px solid var(--line);
       padding: 1rem;
+      transition: background 0.12s;
+
     }
 
     .keyboard {
@@ -165,21 +167,29 @@
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+      transition: background 0.12s;
+
     }
 
     .key-row {
       display: grid;
       gap: 6px;
+      transition: background 0.12s;
+
     }
 
     /* One octave: 7 white keys (C D E F G A B). Black row uses 14 sub-cols
      so black keys (2-sub-col span) center exactly on white-key boundaries. */
     .row-white {
       grid-template-columns: repeat(7, 1fr);
+      transition: background 0.12s;
+
     }
 
     .row-black {
       grid-template-columns: repeat(14, 1fr);
+      transition: background 0.12s;
+
     }
 
     .key {
@@ -274,6 +284,8 @@
 
       .key.black .note-name {
         font-size: 0.7rem;
+        transition: background 0.12s;
+
       }
     }
 
