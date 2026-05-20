@@ -253,6 +253,15 @@
     'sta-theme',
   ];
 
+  // ---------- DOM references ----------
+  // Resolved up front so functions defined below can close over them
+  // safely, even when called early during shell init.
+  const switcherEl   = document.getElementById('switcherApps');
+  const frameA       = document.getElementById('frameA');
+  const frameB       = document.getElementById('frameB');
+  const loadingHint  = document.getElementById('loadingHint');
+  const themeToggleBtn = document.getElementById('themeToggle');
+
   // ---------- Theme ----------
   function readInitialTheme() {
     try {
@@ -302,11 +311,6 @@
   });
 
   // ---------- Switcher render ----------
-  const switcherEl = document.getElementById('switcherApps');
-  const frameA = document.getElementById('frameA');
-  const frameB = document.getElementById('frameB');
-  const loadingHint = document.getElementById('loadingHint');
-
   APPS.forEach((app) => {
     const btn = document.createElement('button');
     btn.type = 'button';
