@@ -520,6 +520,26 @@
       }
     }
   </style>
+  <script>
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('aifbaby-theme'); } catch (e) { return null; }
+      })();
+      // Inherit theme from sibling tools (WAVbaby, MP3baby, LUFSbaby) so the family feels unified
+      const wavSaved = (() => {
+        try { return localStorage.getItem('wavbaby-theme'); } catch (e) { return null; }
+      })();
+      const mp3Saved = (() => {
+        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+      })();
+      const lufsSaved = (() => {
+        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || wavSaved || mp3Saved || lufsSaved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 
 <body>
@@ -587,24 +607,7 @@
     // ============================================================
     // Theme toggle
     // ============================================================
-    (function initTheme() {
-      const saved = (() => {
-        try { return localStorage.getItem('aifbaby-theme'); } catch (e) { return null; }
-      })();
-      // Inherit theme from sibling tools (WAVbaby, MP3baby, LUFSbaby) so the family feels unified
-      const wavSaved = (() => {
-        try { return localStorage.getItem('wavbaby-theme'); } catch (e) { return null; }
-      })();
-      const mp3Saved = (() => {
-        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
-      })();
-      const lufsSaved = (() => {
-        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
-      })();
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = saved || wavSaved || mp3Saved || lufsSaved || (prefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
+
 
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('themeToggle');

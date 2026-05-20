@@ -389,6 +389,16 @@
       }
     }
   </style>
+  <script>
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('keybaby-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 
 <body>
@@ -421,14 +431,7 @@
     // ============================================================
     // Theme toggle (mirrors LUFSbaby)
     // ============================================================
-    (function initTheme() {
-      const saved = (() => {
-        try { return localStorage.getItem('keybaby-theme'); } catch (e) { return null; }
-      })();
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = saved || (prefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
+
 
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('themeToggle');
