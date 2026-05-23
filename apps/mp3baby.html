@@ -546,8 +546,8 @@
     </footer>
   </div>
 
-  <!-- lamejs: pure-JS LAME MP3 encoder -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+  <!-- lamejs (the LAME MP3 encoder) is loaded inside the Web Worker via importScripts,
+       since encoding now runs off the main thread. No page-level load needed. -->
   <script>
     // ============================================================
     // Theme toggle
@@ -855,10 +855,10 @@
 
         // --- Encode ---
         item.stateEl.textContent = 'encoding';
-        const mp3Blob = await encodeMp3(audio, (pct) => {
+        const mp3Blob = await encodeViaWorker(audio, item.file.name, (pct) => {
           // Encoding spans 15% -> 95% of the bar
           item.barFillEl.style.width = (15 + pct * 0.80) + '%';
-        }, item.file.name);
+        });
         item.barFillEl.style.width = '98%';
 
         // --- Download ---
@@ -901,6 +901,13 @@
         URL.revokeObjectURL(url);
       }, 1000);
     }
+
+    // ============================================================
+    // MP3 encoding — runs in a Web Worker so the UI never freezes.
+    // The worker source is embedded here and turned into a Blob URL at
+    // runtime, so mp3baby stays a single self-contained HTML file.
+    // ============================================================
+    const WORKER_SRC = `importScripts('https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js');
 
     // ============================================================
     // MP3 encoding via lamejs
@@ -947,7 +954,7 @@
       return out;
     }
 
-    async function encodeMp3(audio, onProgress, fileTitle) {
+    async function encodeMp3(audio, fileTitle) {
       if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
         throw new Error('MP3 encoder failed to load. Check your connection and reload.');
       }
@@ -957,8 +964,8 @@
       const kbps = 320;
 
       // Pull channel data, resample if needed
-      let left = audio.getChannelData(0);
-      let right = nCh === 2 ? audio.getChannelData(1) : null;
+      let left = audio.channels[0];
+      let right = nCh === 2 ? audio.channels[1] : null;
       if (outRate !== srcRate) {
         left = resampleChannel(left, srcRate, outRate);
         if (right) right = resampleChannel(right, srcRate, outRate);
@@ -993,7 +1000,7 @@
         samplesSinceYield += (end - i);
         if (samplesSinceYield >= YIELD_EVERY) {
           samplesSinceYield = 0;
-          if (onProgress) onProgress(i / totalSamples);
+          self.postMessage({ type: 'progress', pct: i / totalSamples });
           // eslint-disable-next-line no-await-in-loop
           await new Promise(r => setTimeout(r, 0));
         }
@@ -1015,8 +1022,9 @@
       // Music.app and other libraries, and matches what well-formed MP3s look like.
       const id3Tag = buildId3v2Tag(fileTitle || 'Untitled');
 
-      if (onProgress) onProgress(1);
-      return new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
+      self.postMessage({ type: 'progress', pct: 1 });
+      // Return raw byte parts; main thread assembles the Blob.
+      return { id3Tag, infoFrame, mp3Chunks };
     }
 
     // ============================================================
@@ -1140,7 +1148,7 @@
     // ============================================================
     function buildId3v2Tag(title) {
       // Strip extension from title, keep it ASCII-safe-ish
-      const cleanTitle = title.replace(/\.[^.]+$/, '');
+      const cleanTitle = title.replace(/\\.[^.]+$/, '');
       const titleBytes = stringToUtf8(cleanTitle);
 
       // TIT2 frame: 4-byte ID + 4-byte size + 2-byte flags + 1-byte encoding + payload
@@ -1202,6 +1210,79 @@
       }
       return out;
     }
+
+
+    self.onmessage = async function (e) {
+      const msg = e.data;
+      if (!msg || msg.type !== 'encode') return;
+      try {
+        const result = await encodeMp3(msg.audio, msg.fileTitle);
+        // Transfer the underlying buffers back to avoid a copy.
+        const transfers = [result.id3Tag.buffer, result.infoFrame.buffer]
+          .concat(result.mp3Chunks.map(c => c.buffer));
+        self.postMessage({ type: 'done', result: result }, transfers);
+      } catch (err) {
+        self.postMessage({ type: 'error', message: (err && err.message) || String(err) });
+      }
+    };
+`;
+
+    let _workerUrl = null;
+    function getWorkerUrl() {
+      if (!_workerUrl) {
+        const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+        _workerUrl = URL.createObjectURL(blob);
+      }
+      return _workerUrl;
+    }
+
+    // Encode an AudioBuffer to a 320 kbps MP3 Blob using the worker.
+    // We pull the channel data into plain Float32Arrays and transfer them
+    // to the worker (zero-copy), so the main thread stays free to paint.
+    function encodeViaWorker(audio, fileTitle, onProgress) {
+      return new Promise((resolve, reject) => {
+        const nCh = Math.min(audio.numberOfChannels, 2);
+        const channels = [];
+        const transfers = [];
+        for (let c = 0; c < nCh; c++) {
+          // Copy so we own the buffer and can transfer it (the AudioBuffer's
+          // internal data isn't transferable directly).
+          const src = audio.getChannelData(c);
+          const copy = new Float32Array(src.length);
+          copy.set(src);
+          channels.push(copy);
+          transfers.push(copy.buffer);
+        }
+        const audioMsg = {
+          sampleRate: audio.sampleRate,
+          numberOfChannels: nCh,
+          channels: channels,
+        };
+
+        const worker = new Worker(getWorkerUrl());
+        worker.onmessage = (e) => {
+          const m = e.data;
+          if (m.type === 'progress') {
+            if (onProgress) onProgress(m.pct);
+          } else if (m.type === 'done') {
+            const { id3Tag, infoFrame, mp3Chunks } = m.result;
+            const blob = new Blob([id3Tag, infoFrame, ...mp3Chunks], { type: 'audio/mpeg' });
+            worker.terminate();
+            resolve(blob);
+          } else if (m.type === 'error') {
+            worker.terminate();
+            reject(new Error(m.message || 'Encoding failed in worker.'));
+          }
+        };
+        worker.onerror = (err) => {
+          worker.terminate();
+          reject(new Error('Worker error: ' + (err.message || 'unknown') +
+            ' (if the MP3 encoder failed to load, check your connection and reload)'));
+        };
+        worker.postMessage({ type: 'encode', audio: audioMsg, fileTitle: fileTitle }, transfers);
+      });
+    }
+
   </script>
 </body>
 
