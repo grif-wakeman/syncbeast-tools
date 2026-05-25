@@ -337,6 +337,11 @@
       color: var(--ink);
     }
 
+    .row-state.encoding {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .row-bar {
       grid-column: 1 / -1;
       position: relative;
@@ -855,9 +860,15 @@
 
         // --- Encode ---
         item.stateEl.textContent = 'encoding';
+        item.stateEl.className = 'row-state encoding';
         const mp3Blob = await encodeViaWorker(audio, item.file.name, (pct) => {
-          // Encoding spans 15% -> 95% of the bar
-          item.barFillEl.style.width = (15 + pct * 0.80) + '%';
+          // Encoding spans 15% -> 95% of the bar. The number shown is the SAME
+          // value as the bar fill, so they always agree. (The old code multiplied
+          // pct by 0.80 instead of 80, so the bar barely moved while the % counted
+          // up — they disagreed badly. This locks them together.)
+          const overall = 15 + pct * 80;
+          item.barFillEl.style.width = overall + '%';
+          item.stateEl.textContent = 'encoding ' + Math.round(overall) + '%';
         });
         item.barFillEl.style.width = '98%';
 
