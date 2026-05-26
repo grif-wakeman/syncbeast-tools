@@ -361,6 +361,19 @@
       min-width: 0;
     }
 
+    .row-size {
+      font-size: 0.65rem;
+      color: var(--dim);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .row-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
     .row-state {
       font-size: 0.65rem;
       text-transform: uppercase;
@@ -414,6 +427,27 @@
     .row-bar.err .row-bar-fill {
       background: var(--warn);
       width: 100% !important;
+    }
+
+    /* Indeterminate sweep — shown during native decodeAudioData (WAV/M4A/MP3),
+       which is a browser black box we can't get real progress from. Uses a
+       transform animation so it runs on the compositor thread and keeps moving
+       even if the main thread is briefly blocked by the decode. */
+    .row-bar.indeterminate .row-bar-fill {
+      width: 35%;
+      animation: barSweep 1.1s ease-in-out infinite;
+      will-change: transform;
+      transition: none;
+    }
+
+    @keyframes barSweep {
+      0% {
+        transform: translateX(-115%);
+      }
+
+      100% {
+        transform: translateX(400%);
+      }
     }
 
     .summary {
@@ -780,7 +814,7 @@
       row.className = 'row';
       row.innerHTML = `
     <div class="row-name"></div>
-    <div class="row-state">queued</div>
+    <div class="row-right"><span class="row-state">queued</span></div>
     <div class="row-bar"><div class="row-bar-fill"></div></div>
   `;
       row.querySelector('.row-name').textContent = file.name;
@@ -797,13 +831,29 @@
       });
     }
 
+    function fmtSize(bytes) {
+      if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+      if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+      if (bytes >= 1024) return Math.round(bytes / 1024) + ' KB';
+      return bytes + ' B';
+    }
+
     function updateSummary() {
       const total = state.items.length;
       const done = state.items.filter(i => i.status === 'done').length;
       const err = state.items.filter(i => i.status === 'err').length;
+      const totalBytes = state.items.reduce((s, i) => s + i.file.size, 0);
+      // Count fully-done bytes + partial credit for the file currently in progress
+      const doneBytes = state.items.reduce((s, i) => {
+        if (i.status === 'done') return s + i.file.size;
+        if (i.status === 'active') return s + i.file.size * (i.progress || 0);
+        return s;
+      }, 0);
       countDoneEl.textContent = done;
       countLabelEl.textContent = 'of ' + total + ' done';
-      summaryRightEl.textContent = err > 0 ? (err + ' failed') : '';
+      summaryRightEl.textContent = err > 0
+        ? (err + ' failed · ' + fmtSize(doneBytes) + ' / ' + fmtSize(totalBytes))
+        : (total > 0 ? fmtSize(doneBytes) + ' / ' + fmtSize(totalBytes) : '');
       resetBtn.disabled = state.processing;
     }
 
@@ -943,7 +993,10 @@
       item.status = 'active';
       item.stateEl.textContent = 'decoding';
       item.stateEl.className = 'row-state active';
-      item.barFillEl.style.width = '2%';
+      // Native decode (WAV/M4A/MP3) gives no progress, so show an indeterminate
+      // sweep instead of a dead bar. Clear any inline width so the CSS controls it.
+      item.barFillEl.style.width = '';
+      item.barEl.classList.add('indeterminate');
       setStatus('Processing ' + item.file.name + '…');
 
       try {
@@ -963,13 +1016,15 @@
           // parse the PCM ourselves so aif-in/aif-out works in every browser.
           if (looksLikeAiff(arrayBuffer)) {
             try {
+              // We decode AIFF ourselves with real progress, so drop the
+              // indeterminate sweep and let the climbing % take over.
+              item.barEl.classList.remove('indeterminate');
               audio = await decodeAiff(arrayBuffer, audioCtx, (pct) => {
-                // Decode spans 2% -> 20% of the bar; number matches the fill, same
-                // as the encode phase. This is what keeps the AIFF parse from looking
-                // frozen — without it the bar sits still through the whole parse.
                 const overall = 2 + pct * 18;
+                item.progress = overall / 100;
                 item.barFillEl.style.width = overall + '%';
                 item.stateEl.textContent = 'decoding ' + Math.round(overall) + '%';
+                updateSummary();
               });
             } catch (aiffErr) {
               audioCtx.close();
@@ -981,18 +1036,20 @@
           }
         }
         audioCtx.close();
+        // Decode finished — stop the indeterminate sweep; the bar now shows real
+        // progress for the encode phase.
+        item.barEl.classList.remove('indeterminate');
         item.barFillEl.style.width = '20%';
 
         // --- Encode ---
         item.stateEl.textContent = 'encoding';
         item.stateEl.className = 'row-state encoding';
         const aiffBlob = await encodeAiff(audio, (pct) => {
-          // Encoding spans 20% -> 95% of the bar. The number shown is the SAME
-          // value as the bar fill, so they always agree. (Multiplier is 75, not
-          // 0.75 — 0.75 would barely move the bar while the % counted up.)
           const overall = 20 + pct * 75;
+          item.progress = overall / 100;
           item.barFillEl.style.width = overall + '%';
           item.stateEl.textContent = 'encoding ' + Math.round(overall) + '%';
+          updateSummary();
         });
         item.barFillEl.style.width = '98%';
 
@@ -1008,6 +1065,7 @@
       } catch (err) {
         console.error(err);
         item.status = 'err';
+        item.barEl.classList.remove('indeterminate');
         item.barEl.classList.add('err');
         item.stateEl.textContent = 'error';
         item.stateEl.className = 'row-state err';
