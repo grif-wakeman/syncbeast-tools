@@ -1,796 +1,1009 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-<title>STEREObaby</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --bg: #f5f3ef;
-    --panel: #ebe8e2;
-    --panel-2: #e0ddd6;
-    --ink: #222;
-    --dim: #777;
-    --dimmer: #aaa;
-    --line: #d4d1c9;
-    --warn: #9a3520;
-    --ok: #2a6f4a;
-    --accent: #2a6f4a;
-    --tooltip-bg: #222;
-    --tooltip-ink: #f5f3ef;
-  }
-  html[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --panel-2: #242424;
-    --ink: #e8e8e8;
-    --dim: #888;
-    --dimmer: #555;
-    --line: #2e2e2e;
-    --warn: #e5634a;
-    --ok: #8ace00;
-    --accent: #8ace00;
-    --tooltip-bg: #e8e8e8;
-    --tooltip-ink: #121212;
-  }
-  html { transition: background 0.2s; background: var(--bg); min-height: 100%; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  body { padding: 1.5rem 1.25rem 3rem; }
-  .wrap { max-width: 780px; margin: 0 auto; }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line);
-    gap: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  h1 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  .tag { font-size: 0.7rem; color: var(--dim); }
-  .theme-toggle {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: border-color 0.15s;
-    display: inline-flex;
-    gap: 0.3rem;
-    align-items: center;
-    color: var(--ink);
-  }
-  .theme-toggle:hover { border-color: var(--ink); }
-  .theme-toggle .tm-arrow { color: var(--dim); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-light { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-dark  { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-light { color: var(--dimmer); }
-  html[data-theme="dark"]       .theme-toggle .tm-dark  { color: var(--ink); }
-  html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before { content: "→"; }
-  html[data-theme="dark"]       .theme-toggle .tm-arrow::before { content: "←"; }
-
-  .drop {
-    border: 1px dashed var(--dimmer);
-    background: var(--panel);
-    padding: 2rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    display: block;
-  }
-  .drop:hover, .drop.hover {
-    background: var(--panel-2);
-    border-color: var(--ink);
-  }
-  .drop-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
-  .drop-sub { font-size: 0.7rem; color: var(--dim); }
-  .drop input { display: none; }
-
-  .status {
-    margin-top: 0.75rem;
-    font-size: 0.7rem;
-    color: var(--dim);
-    min-height: 1em;
-  }
-  .status.err { color: var(--warn); }
-
-  .results { margin-top: 1.25rem; display: none; }
-  .results.show { display: block; }
-
-  .section {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    margin-bottom: 0.75rem;
-  }
-  .section-head {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--dim);
-    cursor: help;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .info svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  .info svg .info-ring { stroke: currentColor; }
-  .info svg .info-dot,
-  .info svg .info-stem { fill: currentColor; }
-  .info:hover, .info.open { color: var(--ink); }
-  .info-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 320px;
-    max-width: calc(100vw - 2.5rem);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-ink);
-    border: 1px solid var(--tooltip-bg);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.7rem;
-    font-weight: 400;
-    font-style: normal;
-    text-transform: none;
-    letter-spacing: 0;
-    line-height: 1.5;
-    z-index: 10;
-    display: none;
-    text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  }
-  @media (hover: hover) {
-    .info:hover .info-panel { display: block; }
-  }
-  .info.open .info-panel { display: block; }
-  .info-panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.6rem; }
-  .info-panel dt { font-weight: 700; color: var(--tooltip-ink); white-space: nowrap; }
-  .info-panel dd { color: var(--tooltip-ink); opacity: 0.85; }
-  .section-body { padding: 0.75rem; }
-
-  .file-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-  .file-name { font-size: 0.8rem; font-weight: 500; word-break: break-all; }
-  .file-meta { font-size: 0.7rem; color: var(--dim); }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .headline {
-    padding: 0.75rem 0.75rem 0.85rem;
-    border-bottom: 1px solid var(--line);
-  }
-  .headline-label {
-    color: var(--dim);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.15rem;
-  }
-  .headline-value {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1.15;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  .character-grid {
-    margin-top: 0.85rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1rem;
-  }
-  .character-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-  .character-axis {
-    color: var(--dim);
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .character-value {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1.2;
-  }
-  .character-value.warn { color: var(--warn); }
-  .character-value.ok { color: var(--ok); }
-  .character-sub {
-    color: var(--dim);
-    font-weight: 400;
-    margin-left: 0.4rem;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-  @media (max-width: 420px) {
-    .character-grid { grid-template-columns: 1fr; gap: 0.5rem; }
-  }
-
-  /* Correlation position scale: the width span shown, not just stated. */
-  .corr-scale { margin-top: 0.95rem; }
-  .corr-track {
-    position: relative;
-    height: 8px;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-  }
-  .corr-zone-neg {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 50%;
-    background: var(--warn);
-    opacity: 0.12;
-  }
-  .corr-center {
-    position: absolute;
-    left: 50%;
-    top: -2px;
-    bottom: -2px;
-    width: 1px;
-    background: var(--dim);
-  }
-  .corr-marker {
-    position: absolute;
-    top: 50%;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--accent);
-    transform: translate(-50%, -50%);
-    transition: left 0.2s;
-    z-index: 2;
-  }
-  .corr-marker.warn { background: var(--warn); }
-  .corr-axis {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.35rem;
-    font-size: 0.58rem;
-    color: var(--dim);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .stat {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.3rem 0.5rem;
-    border-bottom: 1px solid var(--line);
-    font-size: 0.8rem;
-  }
-  .stat:nth-child(odd) { border-right: 1px solid var(--line); }
-  .stat:last-child { border-bottom: none; }
-  .stat:nth-last-child(2):nth-child(odd) { border-bottom: none; }
-  .stat-label { color: var(--dim); }
-  .stat-value { font-weight: 500; }
-  .stat-value.warn { color: var(--warn); }
-
-  .reset {
-    margin-top: 1rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    color: var(--dim);
-    padding: 0.4rem 0.75rem;
-    font-family: inherit;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-  }
-  .reset:hover { color: var(--ink); border-color: var(--ink); }
-
-  footer {
-    margin-top: 1.5rem;
-    font-size: 0.65rem;
-    color: var(--dim);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .info.info-footer-word {
-    width: auto;
-    height: auto;
-    border: none;
-    border-radius: 0;
-    font-family: inherit;
-    font-style: normal;
-    font-size: inherit;
-    font-weight: 400;
-    color: var(--dim);
-    padding: 0;
-    background: none;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border-bottom: 1px dotted var(--dimmer);
-  }
-  .info.info-footer-word:hover,
-  .info.info-footer-word.open {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-  .info-panel-footer {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 8px);
-    top: auto;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-  }
-  .privacy-head {
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-  }
-  .info-panel-footer p {
-    font-size: 0.7rem;
-    margin-bottom: 0.4rem;
-    line-height: 1.5;
-  }
-  .info-panel-footer p:last-child { margin-bottom: 0; }
-  @media (max-width: 500px) {
-    .info-panel-footer {
-      position: fixed;
-      left: 1rem;
-      right: 1rem;
-      bottom: 1rem;
-      top: auto;
-      transform: none;
-      width: auto;
-      max-width: none;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>STEREObaby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ef;
+      --panel: #ebe8e2;
+      --panel-2: #e0ddd6;
+      --ink: #222;
+      --dim: #777;
+      --dimmer: #aaa;
+      --line: #d4d1c9;
+      --warn: #9a3520;
+      --ok: #2a6f4a;
+      --accent: #2a6f4a;
+      --tooltip-bg: #222;
+      --tooltip-ink: #f5f3ef;
     }
-  }
 
-  @media (max-width: 500px) {
-    .stats { grid-template-columns: 1fr; }
-    .stat:nth-child(odd) { border-right: none; }
-    .stat:nth-last-child(2) { border-bottom: 1px solid var(--line); }
-  }
-</style>
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --panel: #1c1c1c;
+      --panel-2: #242424;
+      --ink: #e8e8e8;
+      --dim: #888;
+      --dimmer: #555;
+      --line: #2e2e2e;
+      --warn: #e5634a;
+      --ok: #8ace00;
+      --accent: #8ace00;
+      --tooltip-bg: #e8e8e8;
+      --tooltip-ink: #121212;
+    }
+
+    html {
+      transition: background 0.2s;
+      background: var(--bg);
+      min-height: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body {
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      gap: 1rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .theme-toggle {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.15s;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-toggle .tm-arrow {
+      color: var(--dim);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-light {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-dark {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-light {
+      color: var(--dimmer);
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-dark {
+      color: var(--ink);
+    }
+
+    html:not([data-theme="dark"]) .theme-toggle .tm-arrow::before {
+      content: "→";
+    }
+
+    html[data-theme="dark"] .theme-toggle .tm-arrow::before {
+      content: "←";
+    }
+
+    .drop {
+      border: 1px dashed var(--dimmer);
+      background: var(--panel);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      display: block;
+    }
+
+    .drop:hover,
+    .drop.hover {
+      background: var(--panel-2);
+      border-color: var(--ink);
+    }
+
+    .drop-title {
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .drop-sub {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .drop input {
+      display: none;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--dim);
+      min-height: 1em;
+    }
+
+    .status.err {
+      color: var(--warn);
+    }
+
+    .results {
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-head {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      color: var(--dim);
+      cursor: help;
+      position: relative;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .info svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .info svg .info-ring {
+      stroke: currentColor;
+    }
+
+    .info svg .info-dot,
+    .info svg .info-stem {
+      fill: currentColor;
+    }
+
+    .info:hover,
+    .info.open {
+      color: var(--ink);
+    }
+
+    .info-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      max-width: calc(100vw - 2.5rem);
+      background: var(--tooltip-bg);
+      color: var(--tooltip-ink);
+      border: 1px solid var(--tooltip-bg);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.5;
+      z-index: 10;
+      display: none;
+      text-align: left;
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+
+    @media (hover: hover) {
+      .info:hover .info-panel {
+        display: block;
+      }
+    }
+
+    .info.open .info-panel {
+      display: block;
+    }
+
+    .info-panel dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.25rem 0.6rem;
+    }
+
+    .info-panel dt {
+      font-weight: 700;
+      color: var(--tooltip-ink);
+      white-space: nowrap;
+    }
+
+    .info-panel dd {
+      color: var(--tooltip-ink);
+      opacity: 0.85;
+    }
+
+    .section-body {
+      padding: 0.75rem;
+    }
+
+    .file-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .file-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .file-meta {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .headline {
+      padding: 0.75rem 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .headline-label {
+      color: var(--dim);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.15rem;
+    }
+
+    .headline-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .character-grid {
+      margin-top: 0.85rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1rem;
+    }
+
+    .character-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .character-axis {
+      color: var(--dim);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .character-value {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1.2;
+    }
+
+    .character-value.warn {
+      color: var(--warn);
+    }
+
+    .character-value.ok {
+      color: var(--ok);
+    }
+
+    .character-sub {
+      color: var(--dim);
+      font-weight: 400;
+      margin-left: 0.4rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    @media (max-width: 420px) {
+      .character-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+    }
+
+    /* Correlation position scale: the width span shown, not just stated. */
+    .corr-scale {
+      margin-top: 0.95rem;
+    }
+
+    .corr-track {
+      position: relative;
+      height: 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .corr-zone-neg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: var(--warn);
+      opacity: 0.12;
+    }
+
+    .corr-center {
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      bottom: -2px;
+      width: 1px;
+      background: var(--dim);
+    }
+
+    .corr-marker {
+      position: absolute;
+      top: 50%;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: translate(-50%, -50%);
+      transition: left 0.2s;
+      z-index: 2;
+    }
+
+    .corr-marker.warn {
+      background: var(--warn);
+    }
+
+    .corr-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      font-size: 0.58rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.8rem;
+    }
+
+    .stat:nth-child(odd) {
+      border-right: 1px solid var(--line);
+    }
+
+    .stat:last-child {
+      border-bottom: none;
+    }
+
+    .stat:nth-last-child(2):nth-child(odd) {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: var(--dim);
+    }
+
+    .stat-value {
+      font-weight: 500;
+    }
+
+    .stat-value.warn {
+      color: var(--warn);
+    }
+
+    .reset {
+      margin-top: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--dim);
+      padding: 0.4rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+
+    .reset:hover {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--dim);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .info.info-footer-word {
+      width: auto;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      font-family: inherit;
+      font-style: normal;
+      font-size: inherit;
+      font-weight: 400;
+      color: var(--dim);
+      padding: 0;
+      background: none;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      border-bottom: 1px dotted var(--dimmer);
+    }
+
+    .info.info-footer-word:hover,
+    .info.info-footer-word.open {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+
+    .info-panel-footer {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 300px;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .privacy-head {
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    .info-panel-footer p {
+      font-size: 0.7rem;
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .info-panel-footer p:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 500px) {
+      .info-panel-footer {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        top: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .stat:nth-child(odd) {
+        border-right: none;
+      }
+
+      .stat:nth-last-child(2) {
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-  <header>
-    <h1>STEREObaby</h1>
-    <div class="header-right">
-      <div class="tag">L/R correlation</div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
-    </div>
-  </header>
+  <div class="wrap">
+    <header>
+      <h1>STEREObaby</h1>
+      <div class="header-right">
+        <div class="tag">L/R correlation</div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span
+            class="tm-light">light</span><span class="tm-arrow"></span><span class="tm-dark">dark</span></button>
+      </div>
+    </header>
 
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg">
-    <div class="drop-title">Drop an audio file here, or click to select</div>
-    <div class="drop-sub">WAV · MP3 · AIFF · M4A · FLAC · OGG</div>
-  </label>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="audio/*,.wav,.mp3,.aiff,.aif,.m4a,.flac,.ogg">
+      <div class="drop-title">Drop an audio file here, or click to select</div>
+      <div class="drop-sub">WAV · MP3 · AIFF · M4A · FLAC · OGG</div>
+    </label>
 
-  <div class="status" id="status"></div>
+    <div class="status" id="status"></div>
 
-  <div class="results" id="results">
-    <div class="section">
-      <div class="section-head">File</div>
-      <div class="section-body">
-        <div class="file-row">
-          <div class="file-name" id="fname">—</div>
-          <div class="file-meta" id="fmeta">—</div>
+    <div class="results" id="results">
+      <div class="section">
+        <div class="section-head">File</div>
+        <div class="section-body">
+          <div class="file-row">
+            <div class="file-name" id="fname">—</div>
+            <div class="file-meta" id="fmeta">—</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="section">
-      <div class="section-head">
-        <span>Stereo Image</span>
-        <button class="info" type="button" id="imageInfo" aria-label="About these metrics" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5"/><circle class="info-dot" cx="12" cy="7" r="1.5"/><rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5"/></svg><span class="info-panel" role="tooltip">
-          <dl>
-            <dt>Content</dt><dd>Whether the two channels actually differ. Two identical channels are mono content inside a stereo container (dual mono).</dd>
-            <dt>Correlation</dt><dd>+1 means the channels are identical (mono). 0 means fully decorrelated (wide). Negative means the channels oppose each other (cancelling). The whole range from +1 down to 0 is normal.</dd>
-            <dt>Width</dt><dd>How decorrelated the two channels are. Wider is a choice, not a fault. Modern mixes live near the wide end by design.</dd>
-            <dt>Phase</dt><dd>Flags sustained negative correlation. That usually points to a flipped polarity or a wiring mistake, not a creative move.</dd>
-            <dt>Side / Mid</dt><dd>Energy in the difference signal (side) against the sum signal (mid). Lower side means more centered content.</dd>
-            <dt>Mono Sum</dt><dd>Level change if the track gets folded to mono. Around -3 dB is normal for wide material. A large drop means the channels are subtracting.</dd>
-          </dl>
-        </span></button>
-      </div>
-      <div class="headline">
-        <div class="headline-label">Content</div>
-        <div class="headline-value" id="verdict">—</div>
-        <div class="character-grid">
-          <div class="character-cell">
-            <div class="character-axis">Width</div>
-            <div class="character-value">
-              <span id="widthLabel">—</span><span class="character-sub" id="widthSub"></span>
+      <div class="section">
+        <div class="section-head">
+          <span>Stereo Image</span>
+          <button class="info" type="button" id="imageInfo" aria-label="About these metrics" aria-expanded="false"><svg
+              viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="info-ring" cx="12" cy="12" r="10.5" fill="none" stroke-width="1.5" />
+              <circle class="info-dot" cx="12" cy="7" r="1.5" />
+              <rect class="info-stem" x="10.75" y="10.5" width="2.5" height="7.5" rx="0.5" />
+            </svg><span class="info-panel" role="tooltip">
+              <dl>
+                <dt>Content</dt>
+                <dd>Whether the two channels actually differ. Two identical channels are mono content inside a stereo
+                  container (dual mono).</dd>
+                <dt>Correlation</dt>
+                <dd>+1 means the channels are identical (mono). 0 means fully decorrelated (wide). Negative means the
+                  channels oppose each other (cancelling). The whole range from +1 down to 0 is normal.</dd>
+                <dt>Width</dt>
+                <dd>How decorrelated the two channels are. Wider is a choice, not a fault. Modern mixes live near the
+                  wide end by design.</dd>
+                <dt>Phase</dt>
+                <dd>Flags sustained negative correlation. That usually points to a flipped polarity or a wiring mistake,
+                  not a creative move.</dd>
+                <dt>Side / Mid</dt>
+                <dd>Energy in the difference signal (side) against the sum signal (mid). Lower side means more centered
+                  content.</dd>
+                <dt>Mono Sum</dt>
+                <dd>Level change if the track gets folded to mono. Around -3 dB is normal for wide material. A large
+                  drop means the channels are subtracting.</dd>
+              </dl>
+            </span></button>
+        </div>
+        <div class="headline">
+          <div class="headline-label">Content</div>
+          <div class="headline-value" id="verdict">—</div>
+          <div class="character-grid">
+            <div class="character-cell">
+              <div class="character-axis">Width</div>
+              <div class="character-value">
+                <span id="widthLabel">—</span><span class="character-sub" id="widthSub"></span>
+              </div>
+            </div>
+            <div class="character-cell">
+              <div class="character-axis">Phase</div>
+              <div class="character-value" id="phaseLabel">—</div>
             </div>
           </div>
-          <div class="character-cell">
-            <div class="character-axis">Phase</div>
-            <div class="character-value" id="phaseLabel">—</div>
+          <div class="corr-scale" id="corrScale">
+            <div class="corr-track">
+              <div class="corr-zone-neg"></div>
+              <div class="corr-center"></div>
+              <div class="corr-marker" id="corrMarker"></div>
+            </div>
+            <div class="corr-axis">
+              <span>out of phase</span>
+              <span>wide</span>
+              <span>in phase</span>
+            </div>
           </div>
         </div>
-        <div class="corr-scale" id="corrScale">
-          <div class="corr-track">
-            <div class="corr-zone-neg"></div>
-            <div class="corr-center"></div>
-            <div class="corr-marker" id="corrMarker"></div>
+        <div class="stats">
+          <div class="stat"><span class="stat-label">Channels</span><span class="stat-value" id="chCount">—</span></div>
+          <div class="stat"><span class="stat-label">Correlation</span><span class="stat-value" id="corrVal">—</span>
           </div>
-          <div class="corr-axis">
-            <span>out of phase</span>
-            <span>wide</span>
-            <span>in phase</span>
+          <div class="stat"><span class="stat-label">Side / Mid</span><span class="stat-value" id="sideMid">—</span>
           </div>
+          <div class="stat"><span class="stat-label">Mono Sum</span><span class="stat-value" id="monoSum">—</span></div>
         </div>
       </div>
-      <div class="stats">
-        <div class="stat"><span class="stat-label">Channels</span><span class="stat-value" id="chCount">—</span></div>
-        <div class="stat"><span class="stat-label">Correlation</span><span class="stat-value" id="corrVal">—</span></div>
-        <div class="stat"><span class="stat-label">Side / Mid</span><span class="stat-value" id="sideMid">—</span></div>
-        <div class="stat"><span class="stat-label">Mono Sum</span><span class="stat-value" id="monoSum">—</span></div>
-      </div>
+
+      <button class="reset" id="reset">Analyze another file</button>
     </div>
 
-    <button class="reset" id="reset">Analyze another file</button>
+    <footer>
+      <span>mid/side · correlation · © Sync Beast LLC ·</span>
+      <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy"
+        aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
+          <div class="privacy-head">Your audio stays on your device.</div>
+          <p>STEREObaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or
+            retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
+          <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
+        </span></button>
+    </footer>
   </div>
 
-  <footer>
-    <span>mid/side · correlation · © Sync Beast LLC ·</span>
-    <button class="info info-footer-word" type="button" id="privacyInfo" aria-label="Privacy" aria-expanded="false">privacy<span class="info-panel info-panel-footer" role="tooltip">
-      <div class="privacy-head">Your audio stays on your device.</div>
-      <p>STEREObaby processes files entirely inside your browser. Nothing is uploaded, stored, transmitted, or retained by us. No servers, no analytics, no third parties. When you close the tab, everything is gone.</p>
-      <p>You retain all rights to your audio. We never listen to it, learn from it, or share it.</p>
-    </span></button>
-  </footer>
-</div>
-
-<script>
-// ============================================================
-// Theme toggle
-// ============================================================
-(function initTheme() {
-  const saved = (() => {
-    try { return localStorage.getItem('stereo-theme'); } catch (e) { return null; }
-  })();
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') || 'light';
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try { localStorage.setItem('stereo-theme', next); } catch (e) {}
-    });
-  }
-
-  // Info tooltips: click to toggle, tap outside or Escape to close.
-  // Desktop hover behavior is preserved via CSS @media (hover: hover).
-  const infos = document.querySelectorAll('.info');
-  const closeAll = () => {
-    infos.forEach(el => {
-      el.classList.remove('open');
-      el.setAttribute('aria-expanded', 'false');
-    });
-  };
-  infos.forEach(info => {
-    info.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = info.classList.contains('open');
-      closeAll();
-      if (!wasOpen) {
-        info.classList.add('open');
-        info.setAttribute('aria-expanded', 'true');
+  <script>
+    // ============================================================
+    // Theme toggle
+    // ============================================================
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('stereo-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeToggle');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const cur = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('stereo-theme', next); } catch (e) { }
+        });
       }
+
+      // Info tooltips: click to toggle, tap outside or Escape to close.
+      // Desktop hover behavior is preserved via CSS @media (hover: hover).
+      const infos = document.querySelectorAll('.info');
+      const closeAll = () => {
+        infos.forEach(el => {
+          el.classList.remove('open');
+          el.setAttribute('aria-expanded', 'false');
+        });
+      };
+      infos.forEach(info => {
+        info.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = info.classList.contains('open');
+          closeAll();
+          if (!wasOpen) {
+            info.classList.add('open');
+            info.setAttribute('aria-expanded', 'true');
+          }
+        });
+        const panel = info.querySelector('.info-panel');
+        if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
     });
-    const panel = info.querySelector('.info-panel');
-    if (panel) panel.addEventListener('click', (e) => e.stopPropagation());
-  });
-  document.addEventListener('click', closeAll);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-});
 
-const drop = document.getElementById('drop');
-const fileInput = document.getElementById('file');
-const status = document.getElementById('status');
-const results = document.getElementById('results');
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
 
-['dragenter', 'dragover'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.add('hover');
-  });
-});
-['dragleave', 'drop'].forEach(evt => {
-  drop.addEventListener(evt, (e) => {
-    e.preventDefault();
-    drop.classList.remove('hover');
-  });
-});
-drop.addEventListener('drop', (e) => {
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
-});
-fileInput.addEventListener('change', (e) => {
-  const f = e.target.files[0];
-  if (f) handleFile(f);
-});
-document.getElementById('reset').addEventListener('click', () => {
-  results.classList.remove('show');
-  fileInput.value = '';
-  status.textContent = '';
-  status.className = 'status';
-});
+    ['dragenter', 'dragover'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.add('hover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.remove('hover');
+      });
+    });
+    drop.addEventListener('drop', (e) => {
+      const f = e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (f) handleFile(f);
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      results.classList.remove('show');
+      fileInput.value = '';
+      status.textContent = '';
+      status.className = 'status';
+    });
 
-function setStatus(msg, kind = '') {
-  status.textContent = msg;
-  status.className = 'status' + (kind ? ' ' + kind : '');
-}
-
-async function handleFile(file) {
-  results.classList.remove('show');
-  setStatus('Decoding ' + file.name + '…');
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    let audio;
-    try {
-      audio = await ctx.decodeAudioData(arrayBuffer.slice(0));
-    } catch (err) {
-      throw new Error('Could not decode this file. Try WAV, MP3, M4A, FLAC, or OGG.');
+    function setStatus(msg, kind = '') {
+      status.textContent = msg;
+      status.className = 'status' + (kind ? ' ' + kind : '');
     }
-    ctx.close();
-    setStatus('Measuring…');
-    await new Promise(r => setTimeout(r, 20));
-    const stats = analyze(audio);
-    renderResults(file.name, audio, stats);
-    setStatus('');
-  } catch (err) {
-    console.error(err);
-    setStatus('Error — ' + err.message, 'err');
-  }
-}
 
-// ============================================================
-// Analysis
-// ============================================================
-// Thresholds:
-//   MONO_CONTENT_DB  Side energy this far below mid (or lower) reads as no real
-//                    stereo content. Set strict so only a genuinely silent side
-//                    (bit-identical channels or dither-floor difference) gets the
-//                    mono call. Narrow-but-real stereo stays above this and is
-//                    reported as narrow, never pronounced mono.
-//   CANCEL_CORR      Whole-file correlation below this is the one verdict worth
-//                    stating: the channels are opposing, not merely wide. The
-//                    file-wide figure is already energy weighted, so a brief dip
-//                    will not flip its sign; a real polarity fault will.
-const MONO_CONTENT_DB = -60;
-const CANCEL_CORR = -0.1;
+    async function handleFile(file) {
+      results.classList.remove('show');
+      setStatus('Decoding ' + file.name + '…');
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let audio;
+        try {
+          audio = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        } catch (err) {
+          throw new Error('Could not decode this file. Try WAV, MP3, M4A, FLAC, or OGG.');
+        }
+        ctx.close();
+        setStatus('Measuring…');
+        await new Promise(r => setTimeout(r, 20));
+        const stats = analyze(audio);
+        renderResults(file.name, audio, stats);
+        setStatus('');
+      } catch (err) {
+        console.error(err);
+        setStatus('Error — ' + err.message, 'err');
+      }
+    }
 
-function analyze(audio) {
-  const nCh = audio.numberOfChannels;
-  const len = audio.length;
+    // ============================================================
+    // Analysis
+    // ============================================================
+    // Thresholds:
+    //   MONO_CONTENT_DB  Side energy this far below mid (or lower) reads as no real
+    //                    stereo content. Set strict so only a genuinely silent side
+    //                    (bit-identical channels or dither-floor difference) gets the
+    //                    mono call. Narrow-but-real stereo stays above this and is
+    //                    reported as narrow, never pronounced mono.
+    //   CANCEL_CORR      Whole-file correlation below this is the one verdict worth
+    //                    stating: the channels are opposing, not merely wide. The
+    //                    file-wide figure is already energy weighted, so a brief dip
+    //                    will not flip its sign; a real polarity fault will.
+    const MONO_CONTENT_DB = -60;
+    const CANCEL_CORR = -0.1;
 
-  if (nCh === 1) {
-    return { kind: 'mono-file', nCh, len };
-  }
-  if (nCh > 2) {
-    return { kind: 'multi', nCh, len };
-  }
+    function analyze(audio) {
+      const nCh = audio.numberOfChannels;
+      const len = audio.length;
 
-  // Stereo: read the L/R pair.
-  const L = audio.getChannelData(0);
-  const R = audio.getChannelData(1);
+      if (nCh === 1) {
+        return { kind: 'mono-file', nCh, len };
+      }
+      if (nCh > 2) {
+        return { kind: 'multi', nCh, len };
+      }
 
-  let sumLL = 0, sumRR = 0, sumLR = 0;
-  let sumMid = 0, sumSide = 0;
-  for (let i = 0; i < len; i++) {
-    const l = L[i];
-    const r = R[i];
-    sumLL += l * l;
-    sumRR += r * r;
-    sumLR += l * r;
-    const mid = (l + r) * 0.5;
-    const side = (l - r) * 0.5;
-    sumMid += mid * mid;
-    sumSide += side * side;
-  }
+      // Stereo: read the L/R pair.
+      const L = audio.getChannelData(0);
+      const R = audio.getChannelData(1);
 
-  const N = len || 1;
-  const corr = (sumLL > 0 && sumRR > 0) ? sumLR / Math.sqrt(sumLL * sumRR) : 1;
-  const midRMS = Math.sqrt(sumMid / N);
-  const sideRMS = Math.sqrt(sumSide / N);
-  const sideMidDb = (sideRMS > 0 && midRMS > 0) ? 20 * Math.log10(sideRMS / midRMS) : -Infinity;
+      let sumLL = 0, sumRR = 0, sumLR = 0;
+      let sumMid = 0, sumSide = 0;
+      for (let i = 0; i < len; i++) {
+        const l = L[i];
+        const r = R[i];
+        sumLL += l * l;
+        sumRR += r * r;
+        sumLR += l * r;
+        const mid = (l + r) * 0.5;
+        const side = (l - r) * 0.5;
+        sumMid += mid * mid;
+        sumSide += side * side;
+      }
 
-  // Mono fold-down: the mid signal is the mono sum. Compare its level to the
-  // average channel level. Around 0 for correlated material, near -3 dB for
-  // wide decorrelated material, collapsing toward silence for anti-phase.
-  const avgChanRMS = Math.sqrt((sumLL + sumRR) / (2 * N));
-  const monoSumDb = (midRMS > 0 && avgChanRMS > 0) ? 20 * Math.log10(midRMS / avgChanRMS) : -Infinity;
+      const N = len || 1;
+      const corr = (sumLL > 0 && sumRR > 0) ? sumLR / Math.sqrt(sumLL * sumRR) : 1;
+      const midRMS = Math.sqrt(sumMid / N);
+      const sideRMS = Math.sqrt(sumSide / N);
+      const sideMidDb = (sideRMS > 0 && midRMS > 0) ? 20 * Math.log10(sideRMS / midRMS) : -Infinity;
 
-  const isMonoContent = sideMidDb <= MONO_CONTENT_DB;
-  const isCancelling = corr < CANCEL_CORR;
+      // Mono fold-down: the mid signal is the mono sum. Compare its level to the
+      // average channel level. Around 0 for correlated material, near -3 dB for
+      // wide decorrelated material, collapsing toward silence for anti-phase.
+      const avgChanRMS = Math.sqrt((sumLL + sumRR) / (2 * N));
+      const monoSumDb = (midRMS > 0 && avgChanRMS > 0) ? 20 * Math.log10(midRMS / avgChanRMS) : -Infinity;
 
-  return {
-    kind: 'stereo', nCh, len,
-    corr, sideMidDb, monoSumDb, isMonoContent, isCancelling
-  };
-}
+      const isMonoContent = sideMidDb <= MONO_CONTENT_DB;
+      const isCancelling = corr < CANCEL_CORR;
 
-// Width from correlation. Pure description across the legitimate range; none of
-// these is a fault.
-function widthLabel(corr) {
-  if (corr >= 0.6) return 'Narrow';
-  if (corr >= 0.3) return 'Moderate';
-  if (corr >= 0.0) return 'Wide';
-  return 'Very Wide';
-}
+      return {
+        kind: 'stereo', nCh, len,
+        corr, sideMidDb, monoSumDb, isMonoContent, isCancelling
+      };
+    }
 
-function formatDuration(sec) {
-  const m = Math.floor(sec / 60);
-  const s = (sec - m * 60);
-  return m + ':' + s.toFixed(1).padStart(4, '0');
-}
-function fmtSigned(n, d = 2) {
-  if (!isFinite(n)) return '—';
-  const s = n.toFixed(d);
-  return n > 0 ? '+' + s : s;
-}
-function fmtDb(n, d = 1) {
-  if (n === -Infinity) return '−∞ dB';
-  if (!isFinite(n)) return '—';
-  const s = n.toFixed(d);
-  return (n > 0 ? '+' + s : s) + ' dB';
-}
+    // Width from correlation. Pure description across the legitimate range; none of
+    // these is a fault.
+    function widthLabel(corr) {
+      if (corr >= 0.6) return 'Narrow';
+      if (corr >= 0.3) return 'Moderate';
+      if (corr >= 0.0) return 'Wide';
+      return 'Very Wide';
+    }
 
-function setText(id, txt) { document.getElementById(id).textContent = txt; }
+    function formatDuration(sec) {
+      const m = Math.floor(sec / 60);
+      const s = (sec - m * 60);
+      return m + ':' + s.toFixed(1).padStart(4, '0');
+    }
+    function fmtSigned(n, d = 2) {
+      if (!isFinite(n)) return '—';
+      const s = n.toFixed(d);
+      return n > 0 ? '+' + s : s;
+    }
+    function fmtDb(n, d = 1) {
+      if (n === -Infinity) return '−∞ dB';
+      if (!isFinite(n)) return '—';
+      const s = n.toFixed(d);
+      return (n > 0 ? '+' + s : s) + ' dB';
+    }
 
-function renderResults(fname, audio, s) {
-  setText('fname', fname);
-  setText('fmeta',
-    audio.sampleRate + ' Hz · ' +
-    audio.numberOfChannels + ' ch · ' +
-    formatDuration(audio.duration));
+    function setText(id, txt) { document.getElementById(id).textContent = txt; }
 
-  const verdictEl = document.getElementById('verdict');
-  const widthEl = document.getElementById('widthLabel');
-  const widthSub = document.getElementById('widthSub');
-  const phaseEl = document.getElementById('phaseLabel');
-  const scaleEl = document.getElementById('corrScale');
-  const marker = document.getElementById('corrMarker');
+    function renderResults(fname, audio, s) {
+      setText('fname', fname);
+      setText('fmeta',
+        audio.sampleRate + ' Hz · ' +
+        audio.numberOfChannels + ' ch · ' +
+        formatDuration(audio.duration));
 
-  // Reset state carried between files.
-  phaseEl.className = 'character-value';
-  document.getElementById('corrVal').className = 'stat-value';
-  marker.classList.remove('warn');
+      const verdictEl = document.getElementById('verdict');
+      const widthEl = document.getElementById('widthLabel');
+      const widthSub = document.getElementById('widthSub');
+      const phaseEl = document.getElementById('phaseLabel');
+      const scaleEl = document.getElementById('corrScale');
+      const marker = document.getElementById('corrMarker');
 
-  if (s.kind === 'mono-file') {
-    verdictEl.textContent = 'Mono file';
-    widthEl.textContent = 'Mono';
-    widthSub.textContent = '';
-    phaseEl.textContent = '—';
-    scaleEl.style.display = 'none';
-    setText('chCount', s.nCh + ' · mono');
-    setText('corrVal', '—');
-    setText('sideMid', '—');
-    setText('monoSum', '—');
-    results.classList.add('show');
-    return;
-  }
+      // Reset state carried between files.
+      phaseEl.className = 'character-value';
+      document.getElementById('corrVal').className = 'stat-value';
+      marker.classList.remove('warn');
 
-  if (s.kind === 'multi') {
-    verdictEl.textContent = 'Multichannel file';
-    widthEl.textContent = '—';
-    widthSub.textContent = '';
-    phaseEl.textContent = '—';
-    scaleEl.style.display = 'none';
-    setText('chCount', s.nCh + ' · multichannel');
-    setText('corrVal', '—');
-    setText('sideMid', '—');
-    setText('monoSum', '—');
-    results.classList.add('show');
-    return;
-  }
+      if (s.kind === 'mono-file') {
+        verdictEl.textContent = 'Mono file';
+        widthEl.textContent = 'Mono';
+        widthSub.textContent = '';
+        phaseEl.textContent = '—';
+        scaleEl.style.display = 'none';
+        setText('chCount', s.nCh + ' · mono');
+        setText('corrVal', '—');
+        setText('sideMid', '—');
+        setText('monoSum', '—');
+        results.classList.add('show');
+        return;
+      }
 
-  // Stereo file.
-  scaleEl.style.display = 'block';
-  setText('chCount', s.nCh + ' · stereo');
-  setText('corrVal', fmtSigned(s.corr, 2));
-  setText('sideMid', s.sideMidDb === -Infinity ? '−∞ dB' : fmtDb(s.sideMidDb, 1));
-  setText('monoSum', fmtDb(s.monoSumDb, 1));
+      if (s.kind === 'multi') {
+        verdictEl.textContent = 'Multichannel file';
+        widthEl.textContent = '—';
+        widthSub.textContent = '';
+        phaseEl.textContent = '—';
+        scaleEl.style.display = 'none';
+        setText('chCount', s.nCh + ' · multichannel');
+        setText('corrVal', '—');
+        setText('sideMid', '—');
+        setText('monoSum', '—');
+        results.classList.add('show');
+        return;
+      }
 
-  // Marker position maps correlation -1..+1 onto 0..100%.
-  const clamped = Math.max(-1, Math.min(1, s.corr));
-  marker.style.left = ((clamped + 1) / 2 * 100) + '%';
+      // Stereo file.
+      scaleEl.style.display = 'block';
+      setText('chCount', s.nCh + ' · stereo');
+      setText('corrVal', fmtSigned(s.corr, 2));
+      setText('sideMid', s.sideMidDb === -Infinity ? '−∞ dB' : fmtDb(s.sideMidDb, 1));
+      setText('monoSum', fmtDb(s.monoSumDb, 1));
 
-  if (s.isMonoContent) {
-    verdictEl.textContent = 'Stereo file, mono content';
-    widthEl.textContent = 'Mono';
-    widthSub.textContent = '';
-    phaseEl.textContent = '—';
-    results.classList.add('show');
-    return;
-  }
+      // Marker position maps correlation -1..+1 onto 0..100%.
+      const clamped = Math.max(-1, Math.min(1, s.corr));
+      marker.style.left = ((clamped + 1) / 2 * 100) + '%';
 
-  verdictEl.textContent = 'Stereo file, stereo content';
-  widthEl.textContent = widthLabel(s.corr);
-  widthSub.textContent = 'r ' + fmtSigned(s.corr, 2);
+      if (s.isMonoContent) {
+        verdictEl.textContent = 'Stereo file, mono content';
+        widthEl.textContent = 'Mono';
+        widthSub.textContent = '';
+        phaseEl.textContent = '—';
+        results.classList.add('show');
+        return;
+      }
 
-  if (s.isCancelling) {
-    phaseEl.textContent = 'Cancelling';
-    phaseEl.className = 'character-value warn';
-    marker.classList.add('warn');
-    document.getElementById('corrVal').className = 'stat-value warn';
-  } else {
-    phaseEl.textContent = 'In phase';
-    phaseEl.className = 'character-value ok';
-  }
+      verdictEl.textContent = 'Stereo file, stereo content';
+      widthEl.textContent = widthLabel(s.corr);
+      widthSub.textContent = 'r ' + fmtSigned(s.corr, 2);
 
-  results.classList.add('show');
-}
-</script>
+      if (s.isCancelling) {
+        phaseEl.textContent = 'Cancelling';
+        phaseEl.className = 'character-value warn';
+        marker.classList.add('warn');
+        document.getElementById('corrVal').className = 'stat-value warn';
+      } else {
+        phaseEl.textContent = 'In phase';
+        phaseEl.className = 'character-value ok';
+      }
+
+      results.classList.add('show');
+    }
+  </script>
 </body>
+
 </html>
