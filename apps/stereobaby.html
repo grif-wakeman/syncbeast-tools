@@ -44,9 +44,9 @@
     }
 
     html {
-      transition: background 0.2s;
       background: var(--bg);
       min-height: 100%;
+      transition: background 0.12s;
     }
 
     * {
@@ -66,6 +66,7 @@
 
     body {
       padding: 1.5rem 1.25rem 3rem;
+      transition: background 0.12s;
     }
 
     .wrap {
@@ -108,7 +109,7 @@
       font-size: 0.7rem;
       cursor: pointer;
       line-height: 1;
-      transition: border-color 0.15s;
+      transition: border-color 0.12s;
       display: inline-flex;
       gap: 0.3rem;
       align-items: center;
@@ -153,7 +154,7 @@
       padding: 2rem 1rem;
       text-align: center;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.12s, border-color 0.12s;
       display: block;
     }
 
@@ -600,6 +601,29 @@
       }
     }
   </style>
+  <script>
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('stereobaby-theme'); } catch (e) { return null; }
+      })();
+      // Inherit theme from sibling tools so the family feels unified
+      const wavSaved = (() => {
+        try { return localStorage.getItem('wavbaby-theme'); } catch (e) { return null; }
+      })();
+      const mp3Saved = (() => {
+        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+      })();
+      const aifSaved = (() => {
+        try { return localStorage.getItem('aifbaby-theme'); } catch (e) { return null; }
+      })();
+      const lufsSaved = (() => {
+        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || wavSaved || mp3Saved || aifSaved || lufsSaved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 
 <body>
@@ -720,14 +744,6 @@
     // ============================================================
     // Theme toggle
     // ============================================================
-    (function initTheme() {
-      const saved = (() => {
-        try { return localStorage.getItem('stereo-theme'); } catch (e) { return null; }
-      })();
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = saved || (prefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('themeToggle');
       if (btn) {
@@ -735,7 +751,7 @@
           const cur = document.documentElement.getAttribute('data-theme') || 'light';
           const next = cur === 'dark' ? 'light' : 'dark';
           document.documentElement.setAttribute('data-theme', next);
-          try { localStorage.setItem('stereo-theme', next); } catch (e) { }
+          try { localStorage.setItem('stereobaby-theme', next); } catch (e) { }
         });
       }
 

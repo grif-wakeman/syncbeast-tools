@@ -44,9 +44,9 @@
     }
 
     html {
-      transition: background 0.2s;
       background: var(--bg);
       min-height: 100%;
+      transition: background 0.12s;
     }
 
     * {
@@ -66,6 +66,7 @@
 
     body {
       padding: 1.5rem 1.25rem 3rem;
+      transition: background 0.12s;
     }
 
     .wrap {
@@ -108,7 +109,7 @@
       font-size: 0.7rem;
       cursor: pointer;
       line-height: 1;
-      transition: border-color 0.15s;
+      transition: border-color 0.12s;
       display: inline-flex;
       gap: 0.3rem;
       align-items: center;
@@ -153,7 +154,7 @@
       padding: 2rem 1rem;
       text-align: center;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.12s, border-color 0.12s;
       display: block;
     }
 
@@ -314,6 +315,19 @@
       min-width: 0;
     }
 
+    .row-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .row-size {
+      font-size: 0.65rem;
+      color: var(--dim);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
     .row-state {
       font-size: 0.65rem;
       text-transform: uppercase;
@@ -336,6 +350,11 @@
       color: var(--ink);
     }
 
+    .row-state.encoding {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .row-bar {
       grid-column: 1 / -1;
       position: relative;
@@ -352,7 +371,7 @@
       left: 0;
       width: 0%;
       background: var(--accent);
-      transition: width 0.15s linear;
+      transition: width 0.12s linear;
     }
 
     .row-bar.done .row-bar-fill {
@@ -362,6 +381,26 @@
     .row-bar.err .row-bar-fill {
       background: var(--warn);
       width: 100% !important;
+    }
+
+    /* Indeterminate sweep — shown during createImageBitmap / browser decode,
+       which is a black box we can't get real progress from. Runs on the
+       compositor thread so it keeps animating even if the main thread is busy. */
+    .row-bar.indeterminate .row-bar-fill {
+      width: 35%;
+      animation: barSweep 1.1s ease-in-out infinite;
+      will-change: transform;
+      transition: none;
+    }
+
+    @keyframes barSweep {
+      0% {
+        transform: translateX(-115%);
+      }
+
+      100% {
+        transform: translateX(400%);
+      }
     }
 
     .summary {
@@ -475,6 +514,29 @@
       }
     }
   </style>
+  <script>
+    (function initTheme() {
+      const saved = (() => {
+        try { return localStorage.getItem('pngbaby-theme'); } catch (e) { return null; }
+      })();
+      // Inherit theme from sibling tools so the family feels unified
+      const wavSaved = (() => {
+        try { return localStorage.getItem('wavbaby-theme'); } catch (e) { return null; }
+      })();
+      const mp3Saved = (() => {
+        try { return localStorage.getItem('mp3baby-theme'); } catch (e) { return null; }
+      })();
+      const aifSaved = (() => {
+        try { return localStorage.getItem('aifbaby-theme'); } catch (e) { return null; }
+      })();
+      const lufsSaved = (() => {
+        try { return localStorage.getItem('lufs-theme'); } catch (e) { return null; }
+      })();
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || wavSaved || mp3Saved || aifSaved || lufsSaved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 
 <body>
@@ -1079,19 +1141,6 @@
     // ============================================================
     // Theme toggle
     // ============================================================
-    (function initTheme() {
-      const saved = (() => {
-        try { return localStorage.getItem('pngbaby-theme'); } catch (e) { return null; }
-      })();
-      // Inherit a sibling tool's theme choice if the user has one, so the family feels unified
-      const familySaved = (() => {
-        try { return localStorage.getItem('mp3baby-theme') || localStorage.getItem('lufs-theme'); } catch (e) { return null; }
-      })();
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = saved || familySaved || (prefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('themeToggle');
       if (btn) {
@@ -1212,7 +1261,7 @@
       row.className = 'row';
       row.innerHTML = `
     <div class="row-name"></div>
-    <div class="row-state">queued</div>
+    <div class="row-right"><span class="row-state">queued</span></div>
     <div class="row-bar"><div class="row-bar-fill"></div></div>
   `;
       row.querySelector('.row-name').textContent = file.name;
@@ -1280,16 +1329,24 @@
       item.status = 'active';
       item.stateEl.textContent = 'reading';
       item.stateEl.className = 'row-state active';
-      item.barFillEl.style.width = '2%';
+      // decodeImage (createImageBitmap / <img>) is a browser black box — show an
+      // indeterminate sweep instead of a dead bar. Clear inline width so CSS controls it.
+      item.barFillEl.style.width = '';
+      item.barEl.classList.add('indeterminate');
       setStatus('Processing ' + item.file.name + '…');
 
       try {
         // --- Decode to pixels ---
         const img = await decodeImage(item.file);
+        // Decode finished — drop the sweep; real progress takes over from here.
+        item.barEl.classList.remove('indeterminate');
         item.barFillEl.style.width = '20%';
+        item.progress = 0.20;
+        updateSummary();
 
         // --- Compress ---
         item.stateEl.textContent = 'compressing';
+        item.stateEl.className = 'row-state encoding';
         // Yield once so the 'compressing' state paints before the blocking encode
         await new Promise(r => setTimeout(r, 0));
 
@@ -1305,7 +1362,9 @@
           const QUALITY = [92, 88, 84, 80, 76, 72, 68, 64];
           let jpg = null;
           for (let k = 0; k < QUALITY.length; k++) {
-            item.barFillEl.style.width = (30 + k * 6) + '%';
+            const pct = 30 + k * 6;
+            item.barFillEl.style.width = pct + '%';
+            item.progress = pct / 100;
             await new Promise(r => setTimeout(r, 0));
             jpg = PNGQ_ENGINE.encodeJpeg(rgba, img.w, img.h, QUALITY[k]);
             if (jpg.length <= SIZE_CAP) break;
@@ -1321,7 +1380,9 @@
           const LADDER = [256, 224, 192, 160, 128, 96, 64, 48, 32];
           let png = null;
           for (let k = 0; k < LADDER.length; k++) {
-            item.barFillEl.style.width = (30 + k * 6) + '%';
+            const pct = 30 + k * 6;
+            item.barFillEl.style.width = pct + '%';
+            item.progress = pct / 100;
             await new Promise(r => setTimeout(r, 0));
             let candidate = PNGQ_ENGINE.quantize(rgba, img.w, img.h, LADDER[k]);
             if (candidate.length > SIZE_CAP) {
@@ -1335,6 +1396,8 @@
           outExt = 'png';
         }
         item.barFillEl.style.width = '92%';
+        item.progress = 0.92;
+        updateSummary();
 
         // --- Save ---
         item.stateEl.textContent = 'saving';
@@ -1378,6 +1441,7 @@
       } catch (err) {
         console.error(err);
         item.status = 'err';
+        item.barEl.classList.remove('indeterminate');
         item.barEl.classList.add('err');
         item.stateEl.textContent = 'error';
         item.stateEl.className = 'row-state err';
