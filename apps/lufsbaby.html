@@ -329,6 +329,75 @@
       color: var(--dim);
     }
 
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+      width: 100%;
+    }
+
+    .player-btn {
+      flex: 0 0 auto;
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel-2);
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .player-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .player-btn svg {
+      width: 0.85rem;
+      height: 0.85rem;
+      fill: var(--ink);
+      display: block;
+    }
+
+    .player-btn .icon-pause {
+      display: none;
+    }
+
+    .player-btn.playing .icon-play {
+      display: none;
+    }
+
+    .player-btn.playing .icon-pause {
+      display: block;
+    }
+
+    .wave-wrap {
+      flex: 1 1 auto;
+      position: relative;
+      height: 2.25rem;
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .wave-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .player-time {
+      flex: 0 0 auto;
+      font-size: 0.65rem;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
     .stats {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -670,6 +739,20 @@
             <div class="file-name" id="fname">—</div>
             <div class="file-meta" id="fmeta">—</div>
           </div>
+          <div class="player" id="player" style="display:none;">
+            <button class="player-btn" id="playBtn" type="button" aria-label="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 4.5v15l12-7.5z" />
+              </svg>
+              <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
+              </svg>
+            </button>
+            <div class="wave-wrap" id="waveWrap">
+              <canvas id="waveCanvas"></canvas>
+            </div>
+            <div class="player-time" id="playTime">0:00 / 0:00</div>
+          </div>
         </div>
       </div>
 
@@ -827,6 +910,7 @@
       if (f) handleFile(f);
     });
     document.getElementById('reset').addEventListener('click', () => {
+      player.reset();
       results.classList.remove('show');
       fileInput.value = '';
       status.textContent = '';
@@ -839,6 +923,7 @@
     }
 
     async function handleFile(file) {
+      player.reset();
       results.classList.remove('show');
       setStatus('Decoding ' + file.name + '…');
       try {
@@ -1173,12 +1258,225 @@
       return hi.toFixed(1) + ' → ' + lo.toFixed(1) + ' LUFS';
     }
 
+    const player = (() => {
+      const wrap = document.getElementById('player');
+      const btn = document.getElementById('playBtn');
+      const waveWrap = document.getElementById('waveWrap');
+      const canvas = document.getElementById('waveCanvas');
+      const timeEl = document.getElementById('playTime');
+      const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+      let buffer = null;       // AudioBuffer
+      let ctx = null;          // AudioContext
+      let source = null;       // active BufferSourceNode
+      let peaks = null;        // precomputed min/max per pixel column
+      let dpr = 1, cw = 0, ch = 0;
+      let playing = false;
+      let startTime = 0;       // ctx.currentTime at playback start
+      let offset = 0;          // seconds into buffer where playback started
+      let raf = 0;
+
+      function fmtT(sec) {
+        if (!isFinite(sec)) sec = 0;
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ':' + String(s).padStart(2, '0');
+      }
+
+      function computePeaks(buf, cols) {
+        const chs = buf.numberOfChannels;
+        const data = [];
+        for (let c = 0; c < chs; c++) data.push(buf.getChannelData(c));
+        const len = buf.length;
+        const per = len / cols;
+        const out = new Float32Array(cols * 2);
+        for (let i = 0; i < cols; i++) {
+          const start = Math.floor(i * per);
+          const end = Math.min(len, Math.floor((i + 1) * per));
+          let min = 1.0, max = -1.0;
+          for (let j = start; j < end; j++) {
+            for (let c = 0; c < chs; c++) {
+              const v = data[c][j];
+              if (v < min) min = v;
+              if (v > max) max = v;
+            }
+          }
+          if (end <= start) { min = 0; max = 0; }
+          out[i * 2] = min;
+          out[i * 2 + 1] = max;
+        }
+        return out;
+      }
+
+      function resize() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = waveWrap.getBoundingClientRect();
+        cw = Math.max(1, Math.floor(rect.width));
+        ch = Math.max(1, Math.floor(rect.height));
+        canvas.width = Math.floor(cw * dpr);
+        canvas.height = Math.floor(ch * dpr);
+        peaks = computePeaks(buffer, cw);
+        draw();
+      }
+
+      function draw() {
+        if (!buffer) return;
+        const g = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        g.clearRect(0, 0, W, H);
+        const mid = H / 2;
+        const played = playing
+          ? offset + (ctx.currentTime - startTime)
+          : offset;
+        const progX = Math.max(0, Math.min(1, played / buffer.duration)) * cw;
+
+        const base = cssVar('--dimmer') || '#aaa';
+        const acc = cssVar('--accent') || '#2a6f4a';
+
+        for (let i = 0; i < cw; i++) {
+          const min = peaks[i * 2], max = peaks[i * 2 + 1];
+          const y1 = mid + min * mid * 0.92;
+          const y2 = mid + max * mid * 0.92;
+          const x = Math.floor(i * dpr) + 0.5;
+          g.strokeStyle = (i <= progX) ? acc : base;
+          g.lineWidth = Math.max(1, dpr);
+          g.beginPath();
+          g.moveTo(x, Math.min(y1, y2));
+          g.lineTo(x, Math.max(y1, y2) + 0.5);
+          g.stroke();
+        }
+      }
+
+      function tick() {
+        if (!playing) return;
+        const played = offset + (ctx.currentTime - startTime);
+        timeEl.textContent = fmtT(played) + ' / ' + fmtT(buffer.duration);
+        draw();
+        if (played >= buffer.duration) { stop(true); return; }
+        raf = requestAnimationFrame(tick);
+      }
+
+      function startAt(sec) {
+        stopSource();
+        source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        offset = Math.max(0, Math.min(buffer.duration, sec));
+        startTime = ctx.currentTime;
+        source.start(0, offset);
+        source.onended = () => {
+          // only auto-handle natural end; manual stops clear onended first
+        };
+        playing = true;
+        btn.classList.add('playing');
+        btn.setAttribute('aria-label', 'Pause');
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(tick);
+      }
+
+      function stopSource() {
+        if (source) {
+          source.onended = null;
+          try { source.stop(); } catch (e) { }
+          try { source.disconnect(); } catch (e) { }
+          source = null;
+        }
+      }
+
+      function pause() {
+        if (!playing) return;
+        offset = offset + (ctx.currentTime - startTime);
+        if (offset > buffer.duration) offset = buffer.duration;
+        stopSource();
+        playing = false;
+        btn.classList.remove('playing');
+        btn.setAttribute('aria-label', 'Play');
+        cancelAnimationFrame(raf);
+        draw();
+      }
+
+      function stop(reachedEnd) {
+        stopSource();
+        playing = false;
+        btn.classList.remove('playing');
+        btn.setAttribute('aria-label', 'Play');
+        cancelAnimationFrame(raf);
+        offset = reachedEnd ? 0 : offset;
+        timeEl.textContent = fmtT(offset) + ' / ' + fmtT(buffer.duration);
+        draw();
+      }
+
+      function toggle() {
+        if (!buffer) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        if (playing) pause();
+        else startAt(offset >= buffer.duration ? 0 : offset);
+      }
+
+      function seekFromEvent(e) {
+        if (!buffer) return;
+        const rect = waveWrap.getBoundingClientRect();
+        const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+        const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const target = frac * buffer.duration;
+        if (playing) {
+          startAt(target);
+        } else {
+          offset = target;
+          timeEl.textContent = fmtT(offset) + ' / ' + fmtT(buffer.duration);
+          draw();
+        }
+      }
+
+      btn.addEventListener('click', toggle);
+      waveWrap.addEventListener('click', seekFromEvent);
+
+      let resizeRaf = 0;
+      window.addEventListener('resize', () => {
+        if (!buffer) return;
+        cancelAnimationFrame(resizeRaf);
+        resizeRaf = requestAnimationFrame(resize);
+      });
+      // redraw on theme change so played/unplayed colors update
+      new MutationObserver(() => { if (buffer) draw(); })
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+      return {
+        load(buf) {
+          this.reset();
+          buffer = buf;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          offset = 0;
+          wrap.style.display = 'flex';
+          // wait a frame so layout is settled before measuring width
+          requestAnimationFrame(() => {
+            resize();
+            timeEl.textContent = '0:00 / ' + fmtT(buffer.duration);
+          });
+        },
+        reset() {
+          stopSource();
+          playing = false;
+          cancelAnimationFrame(raf);
+          btn.classList.remove('playing');
+          btn.setAttribute('aria-label', 'Play');
+          if (ctx) { try { ctx.close(); } catch (e) { } ctx = null; }
+          buffer = null;
+          peaks = null;
+          offset = 0;
+          wrap.style.display = 'none';
+        }
+      };
+    })();
+
     function renderResults(fname, audio, s) {
       document.getElementById('fname').textContent = fname;
       document.getElementById('fmeta').textContent =
         audio.sampleRate + ' Hz · ' +
         audio.numberOfChannels + ' ch · ' +
         formatDuration(audio.duration);
+
+      player.load(audio);
 
       const intTxt = isFinite(s.integrated) ? s.integrated.toFixed(1) : '−∞';
       document.getElementById('lufsI').innerHTML =
